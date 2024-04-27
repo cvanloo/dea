@@ -39,14 +39,15 @@
      :alphabet alphabet
      :transitions (set/union
                     (tr "q_0" (range 1 10) "p")
-                    [["q_0" "-" "m"] ["q_0" "0" "e"]]
+                    [["q_0" "-" "m"] ["q_0" "0" "z"]]
                     (tr "p" (range 0 10) "p")
                     [["p" "-" "e"]]
                     (tr "e" alphabet "e")
                     (tr "m" (range 1 10) "p")
-                    [["m" "0" "e"] ["m" "-" "e"]])
+                    [["m" "0" "e"] ["m" "-" "e"]]
+                    (tr "z" alphabet "e"))
      :start "q_0"
-     :accept #{"p"}}))
+     :accept #{"p" "z"}}))
 
 (defn run-dea
   [{:keys [states alphabet transitions start accept]} input]
@@ -64,8 +65,8 @@
 ; (dea/-main "even" "" "0" "1" "01" "010")
 ; ([E true] [E true] [O false] [O false] [E true])
 ;
-; (dea/-main "natural-numbers" "" "0" "1" "54-7" "100" "-")
-; ([q_0 false] [e false] [p true] [e false] [p true] [m false])
+; (dea/-main "natural-numbers" "" "0" "1" "54-7" "100" "-" "05" "5")
+; ([q_0 false] [z true] [p true] [e false] [p true] [m false] [e false] [p true])
 (defn -main
   [dea & args]
   (let [deas
