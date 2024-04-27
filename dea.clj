@@ -106,18 +106,21 @@
               (fn [key old]
                 (if (some
                       (fn [key]
-                        (false? (do (println key) (get table key))))
+                        (false? (get table key)))
                       (map (fn [c]
                              (hash-set
                                (last (find-transition (first key) c))
                                (last (find-transition (or (second key) (first key)) c))))
                            alphabet))
                   false
-                  old))))]
+                  old))))
+          (get-same-states [table]
+            (filter (fn [[k v]] (and v (= 2 (count k)))) table))]
     (-> (perms states)
         init-table
         mark-non-accept
-        mark-transition-into-already-marked)))
+        mark-transition-into-already-marked
+        get-same-states)))
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
