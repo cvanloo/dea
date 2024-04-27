@@ -179,10 +179,23 @@
    :start "q_0"
    :accept #{"q_0"}})
 
+(def nea-with-epsilon
+  {:states (apply hash-set (map #(str "q_" %) (range 0 6)))
+   :alphabet #{\0}
+   :transitions #{["q_0" 'epsilon "q_1"]
+                  ["q_0" 'epsilon "q_3"]
+                  ["q_1" \0 "q_2"]
+                  ["q_2" \0 "q_1"]
+                  ["q_3" \0 "q_4"]
+                  ["q_4" \0 "q_5"]
+                  ["q_5" \0 "q_3"]}
+   :start "q_0"
+   :accept #{"q_1" "q_3"}})
+
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
-            (filter (fn [[s1' c' _]] (and (= s1 s1') (= c c'))) transitions))
+            (filter (fn [[s1' c' _]] (or (= c' 'epsilon) (and (= s1 s1') (= c c')))) transitions))
           (find-next-states [current-states c]
             (apply concat
                    (map (partial find-transitions c) current-states)))
