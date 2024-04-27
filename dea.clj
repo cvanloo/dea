@@ -195,7 +195,7 @@
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
-            (filter (fn [[s1' c' _]] (or (= c' 'epsilon) (and (= s1 s1') (= c c')))) transitions))
+            (filter (fn [[s1' c' _]] (or (and (= c' 'epsilon) (= s1 s1')) (and (= s1 s1') (= c c')))) transitions))
           (find-next-states [current-states c]
             (apply concat
                    (map (partial find-transitions c) current-states)))
@@ -203,13 +203,31 @@
             (if (nil? c)
               [current-states (or (some (partial contains? accept) current-states) false)]
               (recur (map last (find-next-states current-states c)) input)))]
-    (step #{start} input)))
+    (step #{start} (conj (seq input) 'epsilon))))
 
 ; (dea/run-nea dea/nea-baa "baa")
 ; [("q_0" "q_2" "q_1") true]
 ;
 ; (dea/run-nea dea/nea-baa "bab")
 ; [("q_2") false]
+
+; (dea/run-nea dea/nea-with-epsilon "")
+; [("q_1" "q_3") true]
+;
+; (dea/run-nea dea/nea-with-epsilon "0")
+; [("q_2" "q_4") false]
+;
+; (dea/run-nea dea/nea-with-epsilon "00")
+; [("q_1" "q_5") true]
+;
+; (dea/run-nea dea/nea-with-epsilon "000")
+; [("q_2" "q_3") true]
+;
+; (dea/run-nea dea/nea-with-epsilon "0000")
+; [("q_1" "q_4") true]
+;
+; (dea/run-nea dea/nea-with-epsilon "00000")
+; [("q_2" "q_5") false]
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
