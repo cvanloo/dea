@@ -6,7 +6,8 @@
 ; > (-main)
 ; make changes
 ; (refresh)
-(ns dea)
+(ns dea
+  (:require [clojure.set :as set]))
 
 (def dea-drehkreuz
   {:states #{\V \E}
@@ -28,24 +29,43 @@
    :start \E
    :accept #{\E}})
 
+(def dea-whole-numbers
+  (let [alphabet (apply hash-set (conj (map str (range 0 10)) "-"))]
+    {:states #{"q_0" "z" "p" "e" "m"}
+     :alphabet alphabet
+     :transitions (set/union
+                    (map #(vector "q_0" (str %) "p") (range 1 10))
+                    [["q_0" "-" "m"] ["q_0" "0" "e"]]
+                    (map #(vector "p" (str %) "p") (range 0 10))
+                    [["p" "-" "e"]]
+                    (map #(vector "e" % "e") alphabet)
+                    (map #(vector "m" (str %) "p") (range 1 10))
+                    [["m" "0" "e"] ["m" "-" "e"]])
+     :start "q_0"
+     :accept #{"p"}}))
+
 (defn run-dea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transition [s1 c]
-            (first (filter (fn [[s1' c' _]] (and (= s1' s1) (= c' c))) transitions)))
+            (first (filter (fn [[s1' c' _]] (and (= (str s1') (str s1)) (= (str c') (str c)))) transitions)))
           (step [state [c & input]]
             (if (nil? c)
               [state (contains? accept state)]
               (recur (last (find-transition state c)) input)))]
     (step start input)))
 
-; user=> (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
+; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
 ;
 ; (dea/-main "even" "" "0" "1" "01" "010")
 ; ([E true] [E true] [O false] [O false] [E true])
+;
+; (dea/-main "natural-numbers" "" "0" "1" "54-7" "100" "-")
+; ([q_0 false] [e false] [p true] [e false] [p true] [m false])
 (defn -main
   [dea & args]
   (let [deas
         {"even" dea-even
-         "drehkreuz" dea-drehkreuz}]
+         "drehkreuz" dea-drehkreuz
+         "natural-numbers" dea-whole-numbers}]
     (println (map (partial run-dea (get deas dea)) args))))
