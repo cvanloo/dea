@@ -106,13 +106,12 @@
               (fn [key old]
                 (if (some
                       (fn [key]
-                        (false? (get table key)))
-                      (apply concat
-                             (map (fn [c]
-                                    (hash-set
-                                      (find-transition (first key) c)
-                                      (find-transition (or (second key) (first key)) c)))
-                                  alphabet)))
+                        (false? (do (println key) (get table key))))
+                      (map (fn [c]
+                             (hash-set
+                               (last (find-transition (first key) c))
+                               (last (find-transition (or (second key) (first key)) c))))
+                           alphabet))
                   false
                   old))))]
     (-> (perms states)
