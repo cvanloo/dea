@@ -168,6 +168,36 @@
         (println "min" min-res)))
     ["0001" "1" "0" "01" "10" "101" "010" "000111" "111000"]))
 
+(def nea-baa
+  {:states #{"q_0" "q_1", "q_2"}
+   :alphabet #{\a \b}
+   :transitions #{["q_0" \b "q_1"]
+                  ["q_1" \a "q_1"]
+                  ["q_1" \a "q_2"]
+                  ["q_1" \b "q_2"]
+                  ["q_2" \a "q_0"]}
+   :start "q_0"
+   :accept #{"q_0"}})
+
+(defn run-nea
+  [{:keys [states alphabet transitions start accept]} input]
+  (letfn [(find-transitions [c s1]
+            (filter (fn [[s1' c' _]] (and (= s1 s1') (= c c'))) transitions))
+          (find-next-states [current-states c]
+            (apply concat
+                   (map (partial find-transitions c) current-states)))
+          (step [current-states [c & input]]
+            (if (nil? c)
+              [current-states (or (some (partial contains? accept) current-states) false)]
+              (recur (map last (find-next-states current-states c)) input)))]
+    (step #{start} input)))
+
+; (dea/run-nea dea/nea-baa "baa")
+; [("q_0" "q_2" "q_1") true]
+;
+; (dea/run-nea dea/nea-baa "bab")
+; [("q_2") false]
+
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
 ;
