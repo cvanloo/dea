@@ -210,7 +210,7 @@
   (letfn [(find-transitions [c s1]
             (filter (fn [[s1' c' _]]
                       (or
-                        (and (= c' 'epsilon) (= s1 s1'))
+                        (and (= s1 s1') (= 'epsilon c'))
                         (and (= s1 s1') (= c c'))))
                     transitions))
           (find-next-states [current-states c]
@@ -220,7 +220,9 @@
             (if (nil? c)
               [current-states (or (some (partial contains? accept) current-states) false)]
               (recur (map last (find-next-states current-states c)) input)))]
-    (step (set/union #{start} (find-transitions 'epsilon start)) input)))
+    ;(step (set/union #{start} (find-transitions 'epsilon start)) input)))
+    ; @fixme: if there are multiple epsilons following each other, we need to take them all too
+    (step #{start} input)))
 
 ; (dea/run-nea dea/nea-baa "baa")
 ; [("q_0" "q_2" "q_1") true]
