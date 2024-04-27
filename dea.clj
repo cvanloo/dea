@@ -13,6 +13,10 @@
   [s1 r s2]
   (map #(vector s1 (str %) s2) r))
 
+;     | F D
+; ---------
+; V/E | E V
+;  E  | E V
 (def dea-drehkreuz
   {:states #{\V \E}
    :alphabet #{\F \D}
@@ -58,6 +62,28 @@
               [state (contains? accept state)]
               (recur (last (find-transition state c)) input)))]
     (step start input)))
+
+(defn myhill-nerode
+  [{:keys [states transitions accept] :as dea}]
+  (letfn [(perms [xs]
+            (apply concat (map (fn [c] (map (fn [c'] [c c']) xs)) xs)))
+          (init-table [perms]
+            (apply merge (map (fn [[a b]] {(hash-set a b) true}) perms)))
+          (mark-non-accept [table accepts]
+            (reduce
+              (fn [table key]
+                (update table key
+                  (fn [old]
+                    (if (=
+                          (contains? accepts (first key))
+                          (contains? accepts (or (second key) (first key))))
+                      old
+                      false))))
+              table
+              (keys table)))]
+    (-> (perms states)
+        init-table
+        (mark-non-accept accept))))
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
