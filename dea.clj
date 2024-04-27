@@ -9,6 +9,10 @@
 (ns dea
   (:require [clojure.set :as set]))
 
+(defn tr
+  [s1 r s2]
+  (map #(vector s1 (str %) s2) r))
+
 (def dea-drehkreuz
   {:states #{\V \E}
    :alphabet #{\F \D}
@@ -34,12 +38,12 @@
     {:states #{"q_0" "z" "p" "e" "m"}
      :alphabet alphabet
      :transitions (set/union
-                    (map #(vector "q_0" (str %) "p") (range 1 10))
+                    (tr "q_0" (range 1 10) "p")
                     [["q_0" "-" "m"] ["q_0" "0" "e"]]
-                    (map #(vector "p" (str %) "p") (range 0 10))
+                    (tr "p" (range 0 10) "p")
                     [["p" "-" "e"]]
-                    (map #(vector "e" % "e") alphabet)
-                    (map #(vector "m" (str %) "p") (range 1 10))
+                    (tr "e" alphabet "e")
+                    (tr "m" (range 1 10) "p")
                     [["m" "0" "e"] ["m" "-" "e"]])
      :start "q_0"
      :accept #{"p"}}))
