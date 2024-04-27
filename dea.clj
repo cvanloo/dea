@@ -183,3 +183,11 @@
          "drehkreuz" dea-drehkreuz
          "natural-numbers" dea-whole-numbers}]
     (println (map (partial run-dea (get deas dea)) args))))
+
+
+; @todo: pretty print dea
+; @todo: cmd:
+;   - parse dea
+;   - simplify dea
+;   - run dea
+;   - print steps
