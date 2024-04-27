@@ -195,7 +195,11 @@
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
-            (filter (fn [[s1' c' _]] (or (and (= c' 'epsilon) (= s1 s1')) (and (= s1 s1') (= c c')))) transitions))
+            (filter (fn [[s1' c' _]]
+                      (or
+                        (and (= c' 'epsilon) (= s1 s1'))
+                        (and (= s1 s1') (= c c'))))
+                    transitions))
           (find-next-states [current-states c]
             (apply concat
                    (map (partial find-transitions c) current-states)))
