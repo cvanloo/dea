@@ -150,7 +150,23 @@
                  (conj (disj accept s1 s2) sn))})))
 
 (defn simplify-dea
-  [{:keys [states alphabet transitions start accept]} same-states])
+  [dea same-states]
+  (reduce (fn [dea states]
+            (merge-states dea (first states) (second states)))
+          dea
+          same-states))
+
+
+(defn test-simplify
+  []
+  (map
+    (fn [input]
+      (let [non-min-res (run-dea dea-not-minimal input)
+            min-dea (simplify-dea dea-not-minimal (myhill-nerode dea-not-minimal))
+            min-res (run-dea min-dea input)]
+        (println "max" non-min-res)
+        (println "min" min-res)))
+    ["0001" "1" "0" "01" "10" "101" "010" "000111" "111000"]))
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
