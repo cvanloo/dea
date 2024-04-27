@@ -192,6 +192,19 @@
    :start "q_0"
    :accept #{"q_1" "q_3"}})
 
+(def nea-a-in-3rd-to-last
+  {:states (apply hash-set (map #(str "q_" %)) (range 0 4))
+   :alphabet #{\a \b}
+   :transitions #{["q0" \a "q_1"]
+                  ["q0" \a "q_0"]
+                  ["q0" \b "q_0"]
+                  ["q1" \a "q_2"]
+                  ["q1" \b "q_2"]
+                  ["q2" \a "q_3"]
+                  ["q2" \b "q_3"]}
+   :start "q_0"
+   :accept #{"q_3"}})
+
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
@@ -207,7 +220,7 @@
             (if (nil? c)
               [current-states (or (some (partial contains? accept) current-states) false)]
               (recur (map last (find-next-states current-states c)) input)))]
-    (step #{start} (conj (seq input) 'epsilon))))
+    (step (set/union #{start} (find-transitions 'epsilon start)) input)))
 
 ; (dea/run-nea dea/nea-baa "baa")
 ; [("q_0" "q_2" "q_1") true]
