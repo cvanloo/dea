@@ -9,12 +9,12 @@
 (ns dea)
 
 (def dea-drehkreuz
-  {:states [\V \E]
-   :alphabet [\F \D]
-   :transitions [[\V \F \E]
-                 [\V \D \V]
-                 [\E \F \E]
-                 [\E \D \V]]
+  {:states #{\V \E}
+   :alphabet #{\F \D}
+   :transitions #{[\V \F \E]
+                  [\V \D \V]
+                  [\E \F \E]
+                  [\E \D \V]}
    :start \V
    :accept #{\V}})
 
