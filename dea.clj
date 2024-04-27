@@ -6,6 +6,8 @@
 ; > (-main)
 ; make changes
 ; (refresh)
+; useful:
+; *e (show exception / stack trace)
 (ns dea
   (:require [clojure.set :as set]))
 
@@ -53,6 +55,20 @@
      :start "q_0"
      :accept #{"p" "z"}}))
 
+(def dea-not-minimal
+  {:states #{"z_0" "z_1" "z_2" "z_3"}
+   :alphabet #{\0 \1}
+   :transitions #{["z_0" \0 "z_1"]
+                  ["z_0" \1 "z_2"]
+                  ["z_1" \0 "z_2"]
+                  ["z_1" \1 "z_3"]
+                  ["z_2" \0 "z_1"]
+                  ["z_2" \1 "z_3"]
+                  ["z_3" \0 "z_3"]
+                  ["z_3" \1 "z_3"]}
+   :start "z_0"
+   :accept #{"z_3"}})
+
 (defn run-dea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transition [s1 c]
@@ -64,26 +80,45 @@
     (step start input)))
 
 (defn myhill-nerode
-  [{:keys [states transitions accept] :as dea}]
+  [{:keys [states alphabet transitions accept] :as dea}]
   (letfn [(perms [xs]
             (apply concat (map (fn [c] (map (fn [c'] [c c']) xs)) xs)))
           (init-table [perms]
             (apply merge (map (fn [[a b]] {(hash-set a b) true}) perms)))
-          (mark-non-accept [table accepts]
+          (reduce-table [table f]
             (reduce
               (fn [table key]
-                (update table key
-                  (fn [old]
-                    (if (=
-                          (contains? accepts (first key))
-                          (contains? accepts (or (second key) (first key))))
-                      old
-                      false))))
+                (update table key (partial f key)))
               table
-              (keys table)))]
+              (keys table)))
+          (find-transition [s1 c]
+            (first (filter (fn [[s1' c' _]] (and (= (str s1') (str s1)) (= (str c') (str c)))) transitions)))
+          (mark-non-accept [table]
+            (reduce-table table
+              (fn [key old]
+                (if (=
+                     (contains? accept (first key))
+                     (contains? accept (or (second key) (first key))))
+                  old
+                  false))))
+          (mark-transition-into-already-marked [table]
+            (reduce-table table
+              (fn [key old]
+                (if (some
+                      (fn [key]
+                        (false? (get table key)))
+                      (apply concat
+                             (map (fn [c]
+                                    (hash-set
+                                      (find-transition (first key) c)
+                                      (find-transition (or (second key) (first key)) c)))
+                                  alphabet)))
+                  false
+                  old))))]
     (-> (perms states)
         init-table
-        (mark-non-accept accept))))
+        mark-non-accept
+        mark-transition-into-already-marked)))
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
