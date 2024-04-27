@@ -115,12 +115,42 @@
                   false
                   old))))
           (get-same-states [table]
-            (filter (fn [[k v]] (and v (= 2 (count k)))) table))]
+            (map first (filter (fn [[k v]] (and v (= 2 (count k)))) table)))]
     (-> (perms states)
         init-table
         mark-non-accept
         mark-transition-into-already-marked
         get-same-states)))
+
+(defn merge-states
+  [{:keys [states alphabet transitions start accept]} s1 s2]
+  (let [sn (str s1 "_" s2)]
+    (letfn [(update-transition [[from c to] from' to']
+              [(or from' from) c (or to' to)])
+            (update-ts-in [transitions]
+              (map
+                (fn [[from _ to :as t]]
+                  (if (contains? #{s1 s2} to)
+                    (update-transition t nil sn)
+                    t))
+                transitions))
+            (update-ts-out [transitions]
+              (map
+                (fn [[from _ to :as t]]
+                  (if (contains? #{s1 s2} from)
+                    (update-transition t sn nil)
+                    t))
+                transitions))]
+      {:states (conj (disj states s1 s2) sn)
+       :alphabet alphabet
+       :transitions (apply hash-set (update-ts-out (update-ts-in transitions)))
+       :start (if (contains? #{s1 s2} start) sn start)
+       :accept (if (empty? (set/intersection accept #{s1 s2}))
+                 accept
+                 (conj (disj accept s1 s2) sn))})))
+
+(defn simplify-dea
+  [{:keys [states alphabet transitions start accept]} same-states])
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
