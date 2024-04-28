@@ -217,8 +217,9 @@
                     (and (= s1 s1') (= 'epsilon c')))
                   transitions)]
       (if (empty? epsilon-states)
-        []
+        (if (nil? c) epsilon-states [])
         (apply concat
+               (if (nil? c) epsilon-states [])
                (map
                  (partial find-transitions transitions c)
                  (map last epsilon-states)))))))
@@ -236,8 +237,9 @@
                               (and (= s1 s1') (= 'epsilon c')))
                             transitions)]
                 (if (empty? epsilon-states)
-                  []
+                  (if (nil? c) epsilon-states [])
                   (apply concat
+                         (if (nil? c) epsilon-states [])
                          (map
                            (partial find-transitions c)
                            (map last epsilon-states)))))))
@@ -249,8 +251,6 @@
               (if (empty? next-states)
                 [current-states (or (some (partial contains? accept) current-states) false)]
                 (recur (apply hash-set (map last next-states)) input))))]
-    ;(step (set/union #{start} (find-transitions 'epsilon start)) input)))
-    ; @fixme: if there are multiple epsilons following each other, we need to take them all too
     (step #{start} input)))
 
 ; (dea/run-nea dea/nea-baa "baa")
