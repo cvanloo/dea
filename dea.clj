@@ -195,31 +195,60 @@
 (def nea-a-in-3rd-to-last
   {:states (apply hash-set (map #(str "q_" %)) (range 0 4))
    :alphabet #{\a \b}
-   :transitions #{["q0" \a "q_1"]
-                  ["q0" \a "q_0"]
-                  ["q0" \b "q_0"]
-                  ["q1" \a "q_2"]
-                  ["q1" \b "q_2"]
-                  ["q2" \a "q_3"]
-                  ["q2" \b "q_3"]}
+   :transitions #{["q_0" \a "q_1"]
+                  ["q_0" \a "q_0"]
+                  ["q_0" \b "q_0"]
+                  ["q_1" \a "q_2"]
+                  ["q_1" \b "q_2"]
+                  ["q_2" \a "q_3"]
+                  ["q_2" \b "q_3"]}
    :start "q_0"
    :accept #{"q_3"}})
+
+
+(defn find-transitions
+  [transitions c s1]
+  (concat 
+    (filter (fn [[s1' c' _]]
+              (and (= s1 s1') (= c c')))
+            transitions)
+    (let [epsilon-states
+          (filter (fn [[s1' c' _]]
+                    (and (= s1 s1') (= 'epsilon c')))
+                  transitions)]
+      (if (empty? epsilon-states)
+        []
+        (apply concat
+               (map
+                 (partial find-transitions transitions c)
+                 (map last epsilon-states)))))))
+
 
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
-            (filter (fn [[s1' c' _]]
-                      (or
-                        (and (= s1 s1') (= 'epsilon c'))
-                        (and (= s1 s1') (= c c'))))
-                    transitions))
+            (concat 
+              (filter (fn [[s1' c' _]]
+                        (and (= s1 s1') (= c c')))
+                      transitions)
+              (let [epsilon-states
+                    (filter (fn [[s1' c' _]]
+                              (and (= s1 s1') (= 'epsilon c')))
+                            transitions)]
+                (if (empty? epsilon-states)
+                  []
+                  (apply concat
+                         (map
+                           (partial find-transitions c)
+                           (map last epsilon-states)))))))
           (find-next-states [current-states c]
             (apply concat
                    (map (partial find-transitions c) current-states)))
           (step [current-states [c & input]]
-            (if (nil? c)
-              [current-states (or (some (partial contains? accept) current-states) false)]
-              (recur (map last (find-next-states current-states c)) input)))]
+            (let [next-states (find-next-states current-states c)]
+              (if (empty? next-states)
+                [current-states (or (some (partial contains? accept) current-states) false)]
+                (recur (apply hash-set (map last next-states)) input))))]
     ;(step (set/union #{start} (find-transitions 'epsilon start)) input)))
     ; @fixme: if there are multiple epsilons following each other, we need to take them all too
     (step #{start} input)))
