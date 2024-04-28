@@ -168,6 +168,9 @@
         (println "min" min-res)))
     ["0001" "1" "0" "01" "10" "101" "010" "000111" "111000"]))
 
+; must start with a b
+; can contain at most one b in the middle
+; after the middle b, only exactly one more a can appear
 (def nea-baa
   {:states #{"q_0" "q_1", "q_2"}
    :alphabet #{\a \b}
@@ -205,26 +208,6 @@
    :start "q_0"
    :accept #{"q_3"}})
 
-
-(defn find-transitions
-  [transitions c s1]
-  (concat 
-    (filter (fn [[s1' c' _]]
-              (and (= s1 s1') (= c c')))
-            transitions)
-    (let [epsilon-states
-          (filter (fn [[s1' c' _]]
-                    (and (= s1 s1') (= 'epsilon c')))
-                  transitions)]
-      (if (empty? epsilon-states)
-        (if (nil? c) epsilon-states [])
-        (apply concat
-               (if (nil? c) epsilon-states [])
-               (map
-                 (partial find-transitions transitions c)
-                 (map last epsilon-states)))))))
-
-
 (defn run-nea
   [{:keys [states alphabet transitions start accept]} input]
   (letfn [(find-transitions [c s1]
@@ -248,16 +231,14 @@
                    (map (partial find-transitions c) current-states)))
           (step [current-states [c & input]]
             (let [next-states (find-next-states current-states c)]
-              (if (empty? next-states)
+              (if (nil? c)
                 [current-states (or (some (partial contains? accept) current-states) false)]
                 (recur (apply hash-set (map last next-states)) input))))]
-    (step #{start} input)))
-
-; (dea/run-nea dea/nea-baa "baa")
-; [("q_0" "q_2" "q_1") true]
-;
-; (dea/run-nea dea/nea-baa "bab")
-; [("q_2") false]
+    (step
+      (set/union
+        #{start}
+        (map last (find-transitions nil start)))
+      input)))
 
 ; (dea/run-nea dea/nea-with-epsilon "")
 ; [("q_1" "q_3") true]
@@ -276,6 +257,60 @@
 ;
 ; (dea/run-nea dea/nea-with-epsilon "00000")
 ; [("q_2" "q_5") false]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "")
+; [#{"q_0"} false]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "a")
+; [#{"q_1" "q_0"} false]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aa")
+; [#{"q_2" "q_1" "q_0"} false]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aaa")
+; [#{"q_2" "q_1" "q_0" "q_3"} true]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aaab")
+; [#{"q_2" "q_0" "q_3"} true]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aaaba")
+; [#{"q_1" "q_0" "q_3"} true]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aaabaa")
+; [#{"q_2" "q_1" "q_0"} false]
+;
+; (dea/run-nea dea/nea-a-in-3rd-to-last "aaabaab")
+; [#{"q_2" "q_0" "q_3"} true]
+;
+; (dea/run-nea dea/nea-baa "")
+; [#{"q_0"} true]
+;
+; (dea/run-nea dea/nea-baa "a")
+; [#{} false]
+;
+; (dea/run-nea dea/nea-baa "aababbabba")
+; [#{} false]
+;
+; (dea/run-nea dea/nea-baa "b")
+; [#{"q_1"} false]
+;
+; (dea/run-nea dea/nea-baa "baaaa")
+; [#{"q_2" "q_1" "q_0"} true]
+;
+; (dea/run-nea dea/nea-baa "baaaab")
+; [#{"q_2" "q_1"} false]
+;
+; (dea/run-nea dea/nea-baa "baaaaba")
+; [#{"q_2" "q_1" "q_0"} true]
+;
+; (dea/run-nea dea/nea-baa "baaaabaa")
+; [#{"q_2" "q_1" "q_0"} true]
+;
+; (dea/run-nea dea/nea-baa "baaaabbaa")
+; [#{} false]
+;
+; (dea/run-nea dea/nea-baa "baaaaba")
+; [#{"q_2" "q_1" "q_0"} true]
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
