@@ -315,51 +315,46 @@
 ; (dea/run-nea dea/nea-baa "baa")
 ; [#{"q_2" "q_1" "q_0"} true]
 
-(defn nea->dea
-  [{:keys [states alphabet transitions start accepts] :as nea}]
-  (letfn [(find-transitions [c from]
-            (filter (fn [[from' c' _]]
-                      (and (= from' from) (= c' c)))
-                    transitions))
-          (targets [state c]
-            (map last (find-transitions c state)))
-          (combine-names [states]
-            (if (empty? states)
-              "*reject*" ; @fixme: ensure name is not used
-              (str/join "-" states)))
-          (add-new-combinations [m]
-            (let [ks (keys m)]
-              (reduce
-                (fn [[_ m] combs]
-                  (map
-                    (fn [[_ v]]
-                      (if (contains? ks (combine-names v))
-                        v
-                        []))
-                    m))
-                #{}
-                m)))]
-    (reduce into
-            (map
-              (fn [state]
-                {state
-                 (reduce into
-                         (map
-                           (fn [c]
-                             {c (map last (find-transitions c state))})
-                           alphabet))})
-              states))))
+;(defn nea->dea
+;  [{:keys [states alphabet transitions start accepts] :as nea}]
+;  (letfn [(find-transitions [c from]
+;            (filter (fn [[from' c' _]]
+;                      (and (= from' from) (= c' c)))
+;                    transitions))
+;          (targets [state c]
+;            (map last (find-transitions c state)))
+;          (combine-names [states]
+;            (if (empty? states)
+;              "*reject*" ; @fixme: ensure name is not used
+;              (str/join "-" states)))
+;          (add-new-combinations [m]
+;            (let [ks (keys m)]
+;              (reduce
+;                (fn [[_ m] combs]
+;                  (map
+;                    (fn [[_ v]]
+;                      (if (contains? ks (combine-names v))
+;                        v
+;                        []))
+;                    m))
+;                #{}
+;                m)))]
+;    (reduce into
+;            (map
+;              (fn [state]
+;                {state
+;                 (reduce into
+;                         (map
+;                           (fn [c]
+;                             {c (map last (find-transitions c state))})
+;                           alphabet))})
+;              states))))
 
 ; {"q_2" {\a ("q_0"), \b ()},
 ;  "q_1" {\a ("q_2" "q_1"), \b ("q_2")},
 ;  "q_0" {\a (), \b ("q_1")},
 ;  "q_2-q_1" {\a ("q_0" "q_1" "q_2"), \b ("q_2")} ; <-- @todo
 ;  }
-
-(defn combine-names [states]
-  (if (empty? states)
-    "*reject*" ; @fixme: ensure name is not used
-    (str/join "-" states)))
 
 ;(defn add-new-combinations [m]
 ;  (reduce
@@ -369,14 +364,70 @@
 ;    []
 ;    m))
 
-(defn add'
-  [m n]
-  (map
-    (fn [[_ v]]
-      (if (contains? m (combine-names v))
-        []
-        v))
-    n))
+;(defn add'
+;  [m n]
+;  (map
+;    (fn [[_ v]]
+;      (if (contains? m (combine-names v))
+;        []
+;        v))
+;    n))
+
+(def alphabet (:alphabet nea-baa))
+(def transitions (:transitions nea-baa))
+
+(defn combine-name [states]
+  (if (empty? states)
+    "*reject*" ; @fixme: ensure name is not used
+    (str/join "-" states)))
+
+(defn find-transitions [c from]
+  (filter (fn [[from' c' _]]
+            (and (= from' from) (= c' c)))
+          transitions))
+
+(defn map-states
+  [combined-states]
+  {(combine-name combined-states)
+   (reduce into
+           (map (fn [c]
+                  {c (apply concat
+                            (map (fn [state]
+                                   (map last (find-transitions c state)))
+                                 combined-states))})
+                alphabet))})
+
+(defn get-missing
+  [m]
+  (filter
+    (fn [cs]
+      (and (not (empty? cs))
+           (not (contains? m (combine-name cs))) ))
+    (apply concat (map vals (vals m)))))
+
+(defn nea->dea
+  [{:keys [states alphabet transitions start accepts] :as nea}]
+  (loop [missing [[start]]
+         m {}]
+    (if (empty? missing)
+      m
+      (let [m's (map map-states missing)
+            m'  (reduce into m m's)
+            missing' (get-missing m')]
+        (recur
+          missing'
+          m')))))
+
+; {"q_0" {\a (), \b ("q_1")}, "q_1" {\a ("q_2" "q_1"), \b ("q_2")}, "q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_2")}, "q_2" {\a ("q_0"), \b ()}, "q_0-q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}, "q_1-q_2" {\a ("q_2" "q_1" "q_0"), \b ("q_2")}, "q_2-q_1-q_0" {\a ("q_0" "q_2" "q_1"), \b ("q_2" "q_1")}}
+
+;(loop [missing [[start]]
+;       m {}]
+;  (let [m's (map map-states missing)
+;        m'  (reduce into m m's)
+;        missing' (get-missing m')]
+;    (recur
+;      missing'
+;      m')))
 
 (def test1 {"q_2" {\a '("q_0"), \b '()}, "q_1" {\a '("q_2" "q_1"), \b '("q_2")}, "q_0" {\a '(), \b '("q_1")}})
 
