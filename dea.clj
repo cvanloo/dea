@@ -326,7 +326,19 @@
           (combine-names [states]
             (if (empty? states)
               "*reject*" ; @fixme: ensure name is not used
-              (str/join "-" states)))]
+              (str/join "-" states)))
+          (add-new-combinations [m]
+            (let [ks (keys m)]
+              (reduce
+                (fn [[_ m] combs]
+                  (map
+                    (fn [[_ v]]
+                      (if (contains? ks (combine-names v))
+                        v
+                        []))
+                    m))
+                #{}
+                m)))]
     (reduce into
             (map
               (fn [state]
@@ -343,6 +355,32 @@
 ;  "q_0" {\a (), \b ("q_1")},
 ;  "q_2-q_1" {\a ("q_0" "q_1" "q_2"), \b ("q_2")} ; <-- @todo
 ;  }
+
+(defn combine-names [states]
+  (if (empty? states)
+    "*reject*" ; @fixme: ensure name is not used
+    (str/join "-" states)))
+
+;(defn add-new-combinations [m]
+;  (reduce
+;    (fn [[_ n] combs]
+;      (concat combs
+;              ))
+;    []
+;    m))
+
+(defn add'
+  [m n]
+  (map
+    (fn [[_ v]]
+      (if (contains? m (combine-names v))
+        []
+        v))
+    n))
+
+(def test1 {"q_2" {\a '("q_0"), \b '()}, "q_1" {\a '("q_2" "q_1"), \b '("q_2")}, "q_0" {\a '(), \b '("q_1")}})
+
+; (add-new-combinations test1)
 
 
 
