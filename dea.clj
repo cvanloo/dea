@@ -350,8 +350,11 @@
             (filter (fn [[from' c' _]]
                       (and (= from' from) (= c' c)))
                     transitions))
-          (targets [c state]
-            (map last (find-transitions c state)))
+          (targets [c states]
+            (->> states
+                 (map (partial find-transitions c))
+                 (apply concat)
+                 (map last)))
           (take-all-epsilons [states]
             (let [epsilon-states (targets 'epsilon states)]
               (if (empty? epsilon-states)
@@ -365,13 +368,9 @@
             {(apply hash-set combined-states)
              (reduce into
                      (map (fn [c]
-                            {c (apply concat
-                                      (map (fn [state]
-                                             (let [ss (targets c state)
-                                                   ss (set/union ss (take-all-epsilons ss))]
-                                               (println "state=" state "c=" c "target=" (targets c state))
-                                               ss))
-                                           combined-states))})
+                            {c (let [ss (targets c combined-states)
+                                     ss (set/union ss (take-all-epsilons ss))]
+                                 (apply hash-set ss))})
                           alphabet))})
           (get-missing [m]
             (filter
@@ -431,6 +430,24 @@
 ;                ["q_2-q_1-q_0" \b "q_2-q_1"]),
 ;  :start "q_0",
 ;  :accepts #{"q_2-q_1-q_0" "q_0"}}
+
+; (dea/nea->dea dea/nea-with-epsilon-2)
+; {:states ("*reject*" "q_2-q_0" "q_1" "q_2-q_1" "q_2" "q_2-q_1-q_0"),
+;  :alphabet #{\a \b},
+;  :transitions (["*reject*" "b" "*reject*"]
+;                ["*reject*" "a" "*reject*"]
+;                ["q_2" \b "*reject*"]
+;                ["q_2" \a "q_2-q_0"]
+;                ["q_2-q_1" \b "q_2"]
+;                ["q_2-q_1" \a "q_2-q_1-q_0"]
+;                ["q_1" \b "q_2"]
+;                ["q_1" \a "q_2-q_1"]
+;                ["q_2-q_0" \b "q_1"]
+;                ["q_2-q_0" \a "q_2-q_0"]
+;                ["q_2-q_1-q_0" \a "q_2-q_1-q_0"]
+;                ["q_2-q_1-q_0" \b "q_2-q_1"]),
+;  :start "q_0",
+;  :accepts #{"q_2-q_1-q_0" "q_2-q_0"}}
 
 
 ; {:states ("*reject*" "q_2-q_0" "q_0" "q_1" "q_2-q_1" "q_2" "q_2-q_1-q_0"),
