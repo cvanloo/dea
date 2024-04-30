@@ -443,7 +443,13 @@
     (println (map (partial run-dea (get deas dea)) args))))
 
 
+; @todo: nea->dea (with nea_epsilon)
+; @todo: compare two neas
+; @todo: Mengenoperationen (create/combine new nea from other neas)
+
 ; @todo: pretty print dea
+; @todo: regex to nea (to dea)
+; @todo: dea to regex
 ; @todo: cmd:
 ;   - parse dea
 ;   - simplify dea
