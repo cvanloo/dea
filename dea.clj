@@ -356,7 +356,7 @@
                             (apply set/union (map ->tr m))
                             (tr "*reject*" alphabet "*reject*"))
              :start start
-             :accepts (map combine-name (filter #(not (empty? (set/intersection accepts %))) (keys m)))})]
+             :accepts (apply hash-set (map combine-name (filter #(not (empty? (set/intersection accepts %))) (keys m))))})]
     (loop [missing [[start]]
            m {}]
       (if (empty? missing)
@@ -393,6 +393,18 @@
 ;  :start "q_0",
 ;  :accepts ("q_0" "q_2-q_1-q_0")}
 
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "")
+; ["q_0" true]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "a")
+; ["*reject*" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "ba")
+; ["q_2-q_1" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "b")
+; ["q_1" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "ba")
+; ["q_2-q_1" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "baa")
+; ["q_2-q_1-q_0" true]
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
