@@ -379,7 +379,7 @@
 (defn combine-name [states]
   (if (empty? states)
     "*reject*" ; @fixme: ensure name is not used
-    (str/join "-" states)))
+    (str/join "-" (apply hash-set states))))
 
 (defn find-transitions [c from]
   (filter (fn [[from' c' _]]
@@ -418,7 +418,11 @@
           missing'
           m')))))
 
-; {"q_0" {\a (), \b ("q_1")}, "q_1" {\a ("q_2" "q_1"), \b ("q_2")}, "q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_2")}, "q_2" {\a ("q_0"), \b ()}, "q_0-q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}, "q_1-q_2" {\a ("q_2" "q_1" "q_0"), \b ("q_2")}, "q_2-q_1-q_0" {\a ("q_0" "q_2" "q_1"), \b ("q_2" "q_1")}}
+; {"q_0" {\a (), \b ("q_1")},
+; "q_1" {\a ("q_2" "q_1"), \b ("q_2")},
+; "q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_2")},
+; "q_2" {\a ("q_0"), \b ()},
+; "q_2-q_1-q_0" {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}}
 
 ;(loop [missing [[start]]
 ;       m {}]
