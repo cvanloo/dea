@@ -231,19 +231,21 @@
             (filter (fn [[from' c' _]]
                       (and (= from' from) (= c' c)))
                     transitions))
+          (targets [c states]
+            (->> states
+                 (map (partial find-transitions c))
+                 (apply concat)
+                 (map last)))
+          (take-all-epsilons [states]
+            (let [epsilon-states (targets 'epsilon states)]
+              (if (empty? epsilon-states)
+                states
+                (set/union epsilon-states (take-all-epsilons epsilon-states)))))
           (step [current-states [c & input]]
             (if (nil? c)
               [current-states
                (or (some (partial contains? accepts) current-states) false)]
-              (let [next-states (->> current-states
-                                    (map (partial find-transitions c))
-                                    (apply concat)
-                                    (map last))
-                    next-states (->> next-states
-                                     (map (partial find-transitions 'epsilon))
-                                     (apply concat)
-                                     (map last)
-                                     (set/union next-states))]
+              (let [next-states (take-all-epsilons (targets c current-states))]
                 (recur (apply hash-set next-states) input))))]
     (step
       (set/union
