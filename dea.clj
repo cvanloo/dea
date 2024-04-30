@@ -2,14 +2,14 @@
 ; repl:
 ; clj
 ; > (use '[clojure.tools.namespace.repl :only (refresh)])
-; > (use 'dea)
-; > (-main)
+; > (require 'dea)
 ; make changes
-; (refresh)
+; > (refresh)
 ; useful:
-; *e (show exception / stack trace)
+; > *e ; show exception / stack trace
 (ns dea
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [clojure.string :as str]))
 
 (defn tr
   [s1 r s2]
@@ -111,7 +111,7 @@
               (fn [key old]
                 (if (=
                      (contains? accepts (first key))
-                     (contains? accepts (or (second key) (first key))))
+            partial          (contains? accepts (or (second key) (first key))))
                   old
                   false))))
           (mark-transition-into-already-marked [table]
@@ -314,6 +314,40 @@
 ;
 ; (dea/run-nea dea/nea-baa "baa")
 ; [#{"q_2" "q_1" "q_0"} true]
+
+(defn nea->dea
+  [{:keys [states alphabet transitions start accepts] :as nea}]
+  (letfn [(find-transitions [c from]
+            (filter (fn [[from' c' _]]
+                      (and (= from' from) (= c' c)))
+                    transitions))
+          (targets [state c]
+            (map last (find-transitions c state)))
+          (combine-names [states]
+            (if (empty? states)
+              "*reject*" ; @fixme: ensure name is not used
+              (str/join "-" states)))]
+    (reduce into
+            (map
+              (fn [state]
+                {state
+                 (reduce into
+                         (map
+                           (fn [c]
+                             {c (map last (find-transitions c state))})
+                           alphabet))})
+              states))))
+
+; {"q_2" {\a ("q_0"), \b ()},
+;  "q_1" {\a ("q_2" "q_1"), \b ("q_2")},
+;  "q_0" {\a (), \b ("q_1")},
+;  "q_2-q_1" {\a ("q_0" "q_1" "q_2"), \b ("q_2")} ; <-- @todo
+;  }
+
+
+
+
+
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
