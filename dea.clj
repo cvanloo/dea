@@ -388,7 +388,7 @@
 
 (defn map-states
   [combined-states]
-  {(combine-name combined-states)
+  {(apply hash-set combined-states)
    (reduce into
            (map (fn [c]
                   {c (apply concat
@@ -402,9 +402,18 @@
   (filter
     (fn [cs]
       (and (not (empty? cs))
-           (not (contains? m (combine-name cs))) ))
+           (not (contains? m (apply hash-set cs))) ))
     (apply concat (map vals (vals m)))))
 
+(defn m->dea
+  [m]
+  {:states []
+   :alphabet []
+   :transitions []
+   :start []
+   :accepts []})
+
+; @todo: make it work with epsilon NEAs as well
 (defn nea->dea
   [{:keys [states alphabet transitions start accepts] :as nea}]
   (loop [missing [[start]]
@@ -418,11 +427,11 @@
           missing'
           m')))))
 
-; {"q_0" {\a (), \b ("q_1")},
-; "q_1" {\a ("q_2" "q_1"), \b ("q_2")},
-; "q_2-q_1" {\a ("q_0" "q_2" "q_1"), \b ("q_2")},
-; "q_2" {\a ("q_0"), \b ()},
-; "q_2-q_1-q_0" {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}}
+; {#{"q_0"} {\a (), \b ("q_1")},
+;  #{"q_1"} {\a ("q_2" "q_1"), \b ("q_2")},
+;  #{"q_2" "q_1"} {\a ("q_0" "q_2" "q_1"), \b ("q_2")},
+;  #{"q_2"} {\a ("q_0"), \b ()},
+;  #{"q_2" "q_1" "q_0"} {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}}
 
 ;(loop [missing [[start]]
 ;       m {}]
