@@ -226,56 +226,24 @@
    :accepts #{"q_3"}})
 
 (defn run-nea
-  [{:keys [states alphabet transitions start accepts]} input]
-  (letfn [(find-transitions [c s1]
-            (concat
-              (filter (fn [[s1' c' _]]
-                        (and (= s1 s1') (= c c')))
-                      transitions)
-              (let [epsilon-states
-                    (filter (fn [[s1' c' _]]
-                              (and (= s1 s1') (= 'epsilon c')))
-                            transitions)]
-                (apply concat
-                       (if (nil? c) epsilon-states [])
-                       (map
-                         (partial find-transitions c)
-                         (map last epsilon-states))))))
-          (find-next-states [current-states c]
-            (apply concat
-                   (map (partial find-transitions c) current-states)))
-          (step [current-states [c & input]]
-            (let [next-states (find-next-states current-states c)]
-              (if (nil? c)
-                [current-states (or (some (partial contains? accepts) current-states) false)]
-                (recur (apply hash-set (map last next-states)) input))))]
-    (step
-      (set/union
-        #{start}
-        (map last (find-transitions nil start)))
-      input)))
-
-(defn run-nea'
   [{:keys [states alphabet transitions start accepts] :as nea} input]
   (letfn [(find-transitions [c from]
             (filter (fn [[from' c' _]]
                       (and (= from' from) (= c' c)))
                     transitions))
-          (targets [transitions]
-            (map last transitions))
           (step [current-states [c & input]]
             (if (nil? c)
               [current-states
                (or (some (partial contains? accepts) current-states) false)]
-              (let [next-states (map last
-                                     (apply concat
-                                            (map (partial find-transitions c)
-                                                 current-states)))
-                    next-states (apply concat next-states
-                                       (map last
-                                            (apply concat
-                                                   (map (partial find-transitions 'epsilon)
-                                                        next-states))))]
+              (let [next-states (->> current-states
+                                    (map (partial find-transitions c))
+                                    (apply concat)
+                                    (map last))
+                    next-states (->> next-states
+                                     (map (partial find-transitions 'epsilon))
+                                     (apply concat)
+                                     (map last)
+                                     (set/union next-states))]
                 (recur (apply hash-set next-states) input))))]
     (step
       (set/union
