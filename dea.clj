@@ -343,7 +343,6 @@
             (and (= from' from) (= c' c)))
           (:transitions nea-with-epsilon)))
 
-; @todo: make it work with epsilon NEAs as well
 (defn nea->dea
   [{:keys [states alphabet transitions start accepts] :as nea}]
   (letfn [(find-transitions [c from]
@@ -391,7 +390,9 @@
              :transitions (set/union
                             (apply set/union (map ->tr m))
                             (tr "*reject*" alphabet "*reject*"))
-             :start start
+             :start (combine-name (set/union
+                                    #{start}
+                                    (map last (find-transitions 'epsilon start))))
              :accepts (apply hash-set (map combine-name (filter #(not (empty? (set/intersection accepts %))) (keys m))))})]
     (loop [missing [(set/union
                       #{start}
@@ -446,7 +447,7 @@
 ;                ["q_2-q_0" \a "q_2-q_0"]
 ;                ["q_2-q_1-q_0" \a "q_2-q_1-q_0"]
 ;                ["q_2-q_1-q_0" \b "q_2-q_1"]),
-;  :start "q_0",
+;  :start "q_2-q_0",
 ;  :accepts #{"q_2-q_1-q_0" "q_2-q_0"}}
 
 
@@ -519,7 +520,6 @@
     (println (map (partial run-dea (get deas dea)) args))))
 
 
-; @todo: nea->dea (with nea_epsilon)
 ; @todo: compare two neas
 ; @todo: Mengenoperationen (create/combine new nea from other neas)
 
