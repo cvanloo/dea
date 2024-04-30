@@ -375,6 +375,8 @@
 
 (def alphabet (:alphabet nea-baa))
 (def transitions (:transitions nea-baa))
+(def start (:start nea-baa))
+(def accepts (:accepts nea-baa))
 
 (defn combine-name [states]
   (if (empty? states)
@@ -405,13 +407,24 @@
            (not (contains? m (apply hash-set cs))) ))
     (apply concat (map vals (vals m)))))
 
+(defn ->tr
+  [[cs-from v]]
+  (map
+    (fn [[c cs-to]]
+      [(combine-name cs-from)
+       c
+       (combine-name cs-to)])
+    v))
+
 (defn m->dea
   [m]
-  {:states []
-   :alphabet []
-   :transitions []
-   :start []
-   :accepts []})
+  {:states (conj (map combine-name (keys m)) "*reject*")
+   :alphabet alphabet
+   :transitions (set/union
+                  (apply set/union (map ->tr m))
+                  (tr "*reject*" alphabet "*reject*"))
+   :start start
+   :accepts (filter #(set/intersection accepts %) (keys m))})
 
 ; @todo: make it work with epsilon NEAs as well
 (defn nea->dea
@@ -427,28 +440,46 @@
           missing'
           m')))))
 
+; (dea/nea->dea dea/nea-baa)
 ; {#{"q_0"} {\a (), \b ("q_1")},
 ;  #{"q_1"} {\a ("q_2" "q_1"), \b ("q_2")},
 ;  #{"q_2" "q_1"} {\a ("q_0" "q_2" "q_1"), \b ("q_2")},
 ;  #{"q_2"} {\a ("q_0"), \b ()},
 ;  #{"q_2" "q_1" "q_0"} {\a ("q_0" "q_2" "q_1"), \b ("q_1" "q_2")}}
 
-;(loop [missing [[start]]
-;       m {}]
-;  (let [m's (map map-states missing)
-;        m'  (reduce into m m's)
-;        missing' (get-missing m')]
-;    (recur
-;      missing'
-;      m')))
+; (dea/m->dea (dea/nea->dea dea/nea-baa))
+; {:states ("*reject*" "q_0" "q_1" "q_2-q_1" "q_2" "q_2-q_1-q_0"),
+;  :alphabet #{\a \b},
+;  :transitions (["*reject*" "b" "*reject*"]
+;                ["*reject*" "a" "*reject*"]
+;                ["q_2" \b "*reject*"]
+;                ["q_2" \a "q_0"]
+;                ["q_2-q_1" \b "q_2"]
+;                ["q_2-q_1" \a "q_2-q_1-q_0"]
+;                ["q_1" \b "q_2"]
+;                ["q_1" \a "q_2-q_1"]
+;                ["q_0" \b "q_1"]
+;                ["q_0" \a "*reject*"]
+;                ["q_2-q_1-q_0" \a "q_2-q_1-q_0"]
+;                ["q_2-q_1-q_0" \b "q_2-q_1"]),
+;  :start "q_0",
+;  :accepts (#{"q_0"} #{"q_1"} #{"q_2" "q_1"} #{"q_2"} #{"q_2" "q_1" "q_0"})}
 
-(def test1 {"q_2" {\a '("q_0"), \b '()}, "q_1" {\a '("q_2" "q_1"), \b '("q_2")}, "q_0" {\a '(), \b '("q_1")}})
 
-; (add-new-combinations test1)
-
-
-
-
+; {:states ("q_0" "q_1" "q_2-q_1" "q_2" "q_2-q_1-q_0"),
+;  :alphabet #{\a \b},
+;  :transitions (["q_2" \b "*reject*"]
+;                ["q_2" \a "q_0"]
+;                ["q_2-q_1" \b "q_2"]
+;                ["q_2-q_1" \a "q_2-q_1-q_0"]
+;                ["q_1" \b "q_2"]
+;                ["q_1" \a "q_2-q_1"]
+;                ["q_0" \b "q_1"]
+;                ["q_0" \a "*reject*"]
+;                ["q_2-q_1-q_0" \a "q_2-q_1-q_0"]
+;                ["q_2-q_1-q_0" \b "q_2-q_1"]),
+;  :start "q_0",
+;  :accepts (#{"q_0"} #{"q_1"} #{"q_2" "q_1"} #{"q_2"} #{"q_2" "q_1" "q_0"})}
 
 
 
