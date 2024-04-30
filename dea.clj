@@ -102,7 +102,10 @@
               table
               (keys table)))
           (find-transition [s1 c]
-            (first (filter (fn [[s1' c' _]] (and (= (str s1') (str s1)) (= (str c') (str c)))) transitions)))
+            (first (filter (fn [[s1' c' _]]
+                             (and (= (str s1') (str s1))
+                                  (= (str c') (str c))))
+                           transitions)))
           (mark-non-accepts [table]
             (reduce-table table
               (fn [key old]
@@ -125,7 +128,9 @@
                   false
                   old))))
           (get-same-states [table]
-            (map first (filter (fn [[k v]] (and v (= 2 (count k)))) table)))]
+            (map first (filter (fn [[k v]]
+                                 (and v (= 2 (count k))))
+                               table)))]
     (-> (perms states)
         init-table
         mark-non-accepts
@@ -160,23 +165,25 @@
                  (conj (disj accepts s1 s2) sn))})))
 
 (defn simplify-dea
-  [dea same-states]
+  [simplify-f dea]
   (reduce (fn [dea states]
             (merge-states dea (first states) (second states)))
           dea
-          same-states))
+          (simplify-f dea)))
 
+(def simplify-with-myhill-nerode (partial simplify-dea myhill-nerode))
 
-(defn test-simplify
-  []
-  (map
-    (fn [input]
-      (let [non-min-res (run-dea dea-not-minimal input)
-            min-dea (simplify-dea dea-not-minimal (myhill-nerode dea-not-minimal))
-            min-res (run-dea min-dea input)]
-        (println "max" non-min-res)
-        (println "min" min-res)))
-    ["0001" "1" "0" "01" "10" "101" "010" "000111" "111000"]))
+; (dea/simplify-with-myhill-nerode dea/dea-not-minimal)
+; {:states #{"z_2_z_1" "z_3" "z_0"}
+;  :alphabet #{\0 \1}
+;  :transitions #{["z_3" \0 "z_3"]
+;                 ["z_0" \0 "z_2_z_1"]
+;                 ["z_0" \1 "z_2_z_1"]
+;                 ["z_2_z_1" \1 "z_3"]
+;                 ["z_2_z_1" \0 "z_2_z_1"]
+;                 ["z_3" \1 "z_3"]}
+;  :start "z_0"
+;  :accepts #{"z_3"}}
 
 ; must start with a b
 ; can contain at most one b in the middle
