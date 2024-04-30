@@ -406,6 +406,26 @@
 ; user=> (dea/run-dea (dea/nea->dea dea/nea-baa) "baa")
 ; ["q_2-q_1-q_0" true]
 
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "")
+; ["q_0" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "a")
+; ["q_1-q_0" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "a")
+; ["q_1-q_0" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aa")
+; ["q_2-q_1-q_0" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaa")
+; ["q_2-q_1-q_0-q_3" true]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaab")
+; ["q_2-q_0-q_3" true]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaaba")
+; ["q_1-q_0-q_3" true]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaabab")
+; ["q_2-q_0" false]
+; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaababa")
+; ["q_1-q_0-q_3" true]
+
+
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
 ;
