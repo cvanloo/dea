@@ -15,72 +15,82 @@
   [s1 r s2]
   (map #(vector s1 (str %) s2) r))
 
+(defn make-dea
+ "Tries to create a DEA given a transition table.
+  The starting state is the first state from the first transition.
+  Accept states are all states written as symbols instead of as strings."
+  [transition & transitions]
+  (let [transitions (apply hash-set (conj transitions transition))]
+    {:states   (set/union
+                 (apply hash-set (map (comp str first) transitions))
+                 (apply hash-set (map (comp str last) transitions)))
+     :alphabet (apply hash-set (map second transitions))
+     :transitions (map (fn [[f c t]] [(str f) c (str t)]) transitions)
+     :start (str (first transition))
+     :accepts (set/union
+                (apply hash-set (map str (filter symbol? (map first transitions))))
+                (apply hash-set (map str (filter symbol? (map last transitions)))))}))
+
 ;     | F D
 ; ---------
 ; V/E | E V
 ;  E  | E V
 (def dea-drehkreuz
-  {:states #{\V \E}
-   :alphabet #{\F \D}
-   :transitions #{[\V \F \E]
-                  [\V \D \V]
-                  [\E \F \E]
-                  [\E \D \V]}
-   :start \V
-   :accept #{\V}})
+  (make-dea
+    ['V \F \E]
+    [\V \D \V]
+    [\E \F \E]
+    [\E \D \V]))
 
 (def dea-even
-  {:states #{\E \O}
-   :alphabet #{\0 \1}
-   :transitions #{[\E \0 \E]
-                  [\E \1 \O]
-                  [\O \0 \E]
-                  [\O \1 \O]}
-   :start \E
-   :accept #{\E}})
+  (make-dea
+    ['E \0 \E]
+    [\E \1 \O]
+    [\O \0 \E]
+    [\O \1 \O]))
 
 (def dea-whole-numbers
-  (let [alphabet (apply hash-set (conj (map str (range 0 10)) "-"))]
-    {:states #{"q_0" "z" "p" "e" "m"}
-     :alphabet alphabet
-     :transitions (set/union
-                    (tr "q_0" (range 1 10) "p")
-                    [["q_0" "-" "m"] ["q_0" "0" "z"]]
-                    (tr "p" (range 0 10) "p")
-                    [["p" "-" "e"]]
-                    (tr "e" alphabet "e")
-                    (tr "m" (range 1 10) "p")
-                    [["m" "0" "e"] ["m" "-" "e"]]
-                    (tr "z" alphabet "e"))
-     :start "q_0"
-     :accept #{"p" "z"}}))
+  (let [alphabet (conj (map str (range 0 10)) "-")]
+    (into
+      (apply make-dea
+        (set/union
+          (tr "q_0" (range 1 10) "p")
+          [["q_0" "-" "m"] ["q_0" "0" "z"]]
+          (tr "p" (range 0 10) "p")
+          [["p" "-" "e"]]
+          (tr "e" alphabet "e")
+          (tr "m" (range 1 10) "p")
+          [["m" "0" "e"] ["m" "-" "e"]]
+          (tr "z" alphabet "e")))
+      {:start "q_0"
+       :accepts #{"p" "z"}})))
 
 (def dea-not-minimal
-  {:states #{"z_0" "z_1" "z_2" "z_3"}
-   :alphabet #{\0 \1}
-   :transitions #{["z_0" \0 "z_1"]
-                  ["z_0" \1 "z_2"]
-                  ["z_1" \0 "z_2"]
-                  ["z_1" \1 "z_3"]
-                  ["z_2" \0 "z_1"]
-                  ["z_2" \1 "z_3"]
-                  ["z_3" \0 "z_3"]
-                  ["z_3" \1 "z_3"]}
-   :start "z_0"
-   :accept #{"z_3"}})
+  (make-dea
+    ["z_0" \0 "z_1"]
+    ["z_0" \1 "z_2"]
+    ["z_1" \0 "z_2"]
+    ["z_1" \1 "z_3"]
+    ["z_2" \0 "z_1"]
+    ["z_2" \1 "z_3"]
+    ["z_3" \0 "z_3"]
+    ["z_3" \1 'z_3]))
 
 (defn run-dea
-  [{:keys [states alphabet transitions start accept]} input]
+  [{:keys [states alphabet transitions start accepts]} input]
   (letfn [(find-transition [s1 c]
-            (first (filter (fn [[s1' c' _]] (and (= (str s1') (str s1)) (= (str c') (str c)))) transitions)))
+            (first (filter (fn [[s1' c' _]]
+                             (and (= (str s1') (str s1))
+                                  (= (str c') (str c))))
+                           transitions)))
           (step [state [c & input]]
             (if (nil? c)
-              [state (contains? accept state)]
+              [state (contains? accepts state)]
               (recur (last (find-transition state c)) input)))]
     (step start input)))
 
 (defn myhill-nerode
-  [{:keys [states alphabet transitions accept] :as dea}]
+  [{:keys [states alphabet transitions accepts] :as dea}]
   (letfn [(perms [xs]
             (apply concat (map (fn [c] (map (fn [c'] [c c']) xs)) xs)))
           (init-table [perms]
@@ -93,12 +103,12 @@
               (keys table)))
           (find-transition [s1 c]
             (first (filter (fn [[s1' c' _]] (and (= (str s1') (str s1)) (= (str c') (str c)))) transitions)))
-          (mark-non-accept [table]
+          (mark-non-accepts [table]
             (reduce-table table
               (fn [key old]
                 (if (=
-                     (contains? accept (first key))
-                     (contains? accept (or (second key) (first key))))
+                     (contains? accepts (first key))
+                     (contains? accepts (or (second key) (first key))))
                   old
                   false))))
           (mark-transition-into-already-marked [table]
@@ -118,12 +128,12 @@
             (map first (filter (fn [[k v]] (and v (= 2 (count k)))) table)))]
     (-> (perms states)
         init-table
-        mark-non-accept
+        mark-non-accepts
         mark-transition-into-already-marked
         get-same-states)))
 
 (defn merge-states
-  [{:keys [states alphabet transitions start accept]} s1 s2]
+  [{:keys [states alphabet transitions start accepts]} s1 s2]
   (let [sn (str s1 "_" s2)]
     (letfn [(update-transition [[from c to] from' to']
               [(or from' from) c (or to' to)])
@@ -145,9 +155,9 @@
        :alphabet alphabet
        :transitions (apply hash-set (update-ts-out (update-ts-in transitions)))
        :start (if (contains? #{s1 s2} start) sn start)
-       :accept (if (empty? (set/intersection accept #{s1 s2}))
-                 accept
-                 (conj (disj accept s1 s2) sn))})))
+       :accepts (if (empty? (set/intersection accepts #{s1 s2}))
+                 accepts
+                 (conj (disj accepts s1 s2) sn))})))
 
 (defn simplify-dea
   [dea same-states]
@@ -180,7 +190,7 @@
                   ["q_1" \b "q_2"]
                   ["q_2" \a "q_0"]}
    :start "q_0"
-   :accept #{"q_0"}})
+   :accepts #{"q_0"}})
 
 (def nea-with-epsilon
   {:states (apply hash-set (map #(str "q_" %) (range 0 6)))
@@ -193,7 +203,7 @@
                   ["q_4" \0 "q_5"]
                   ["q_5" \0 "q_3"]}
    :start "q_0"
-   :accept #{"q_1" "q_3"}})
+   :accepts #{"q_1" "q_3"}})
 
 (def nea-a-in-3rd-to-last
   {:states (apply hash-set (map #(str "q_" %)) (range 0 4))
@@ -206,10 +216,10 @@
                   ["q_2" \a "q_3"]
                   ["q_2" \b "q_3"]}
    :start "q_0"
-   :accept #{"q_3"}})
+   :accepts #{"q_3"}})
 
 (defn run-nea
-  [{:keys [states alphabet transitions start accept]} input]
+  [{:keys [states alphabet transitions start accepts]} input]
   (letfn [(find-transitions [c s1]
             (concat 
               (filter (fn [[s1' c' _]]
@@ -232,7 +242,7 @@
           (step [current-states [c & input]]
             (let [next-states (find-next-states current-states c)]
               (if (nil? c)
-                [current-states (or (some (partial contains? accept) current-states) false)]
+                [current-states (or (some (partial contains? accepts) current-states) false)]
                 (recur (apply hash-set (map last next-states)) input))))]
     (step
       (set/union
