@@ -225,6 +225,18 @@
    :start "q_0"
    :accepts #{"q_3"}})
 
+(def nea-with-epsilon-2
+  {:states #{"q_0" "q_1" "q_2"}
+   :alphabet #{\a \b}
+   :transitions #{["q_0" \b "q_1"]
+                  ["q_1" \a "q_1"]
+                  ["q_1" \a "q_2"]
+                  ["q_1" \b "q_2"]
+                  ["q_2" \a "q_0"]
+                  ["q_0" 'epsilon "q_2"]}
+   :start "q_0"
+   :accepts #{"q_0"}})
+
 (defn run-nea
   [{:keys [states alphabet transitions start accepts] :as nea} input]
   (letfn [(find-transitions [c from]
@@ -239,13 +251,14 @@
           (take-all-epsilons [states]
             (let [epsilon-states (targets 'epsilon states)]
               (if (empty? epsilon-states)
-                states
+                []
                 (set/union epsilon-states (take-all-epsilons epsilon-states)))))
           (step [current-states [c & input]]
             (if (nil? c)
               [current-states
                (or (some (partial contains? accepts) current-states) false)]
-              (let [next-states (take-all-epsilons (targets c current-states))]
+              (let [next-states (targets c current-states)
+                    next-states (set/union next-states (take-all-epsilons next-states))]
                 (recur (apply hash-set next-states) input))))]
     (step
       (set/union
@@ -315,6 +328,10 @@
 ; (dea/run-nea dea/nea-baa "baa")
 ; [#{"q_2" "q_1" "q_0"} true]
 
+(defn find-transitions [c from]
+  (filter (fn [[from' c' _]]
+            (and (= from' from) (= c' c)))
+          (:transitions nea-with-epsilon)))
 
 ; @todo: make it work with epsilon NEAs as well
 (defn nea->dea
@@ -323,6 +340,16 @@
             (filter (fn [[from' c' _]]
                       (and (= from' from) (= c' c)))
                     transitions))
+          (targets [c states]
+            (->> states
+                 (map (partial find-transitions c))
+                 (apply concat)
+                 (map last)))
+          (take-all-epsilons [states]
+            (let [epsilon-states (targets 'epsilon states)]
+              (if (empty? epsilon-states)
+                states
+                (set/union epsilon-states (take-all-epsilons epsilon-states)))))
           (combine-name [states]
             (if (empty? states)
               "*reject*" ; @fixme: ensure name is not used
@@ -333,7 +360,7 @@
                      (map (fn [c]
                             {c (apply concat
                                       (map (fn [state]
-                                             (map last (find-transitions c state)))
+                                             (take-all-epsilons (targets c state)))
                                            combined-states))})
                           alphabet))})
           (get-missing [m]
@@ -357,7 +384,9 @@
                             (tr "*reject*" alphabet "*reject*"))
              :start start
              :accepts (apply hash-set (map combine-name (filter #(not (empty? (set/intersection accepts %))) (keys m))))})]
-    (loop [missing [[start]]
+    (loop [missing [(set/union
+                      #{start}
+                      (map last (find-transitions 'epsilon start)))]
            m {}]
       (if (empty? missing)
         (m->dea m)
