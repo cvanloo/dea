@@ -255,6 +255,33 @@
         (map last (find-transitions nil start)))
       input)))
 
+(defn run-nea'
+  [{:keys [states alphabet transitions start accepts] :as nea} input]
+  (letfn [(find-transitions [c from]
+            (filter (fn [[from' c' _]]
+                      (and (= from' from) (= c' c)))
+                    transitions))
+          (targets [transitions]
+            (map last transitions))
+          (step [current-states [c & input]]
+            (if (nil? c)
+              [current-states
+               (or (some (partial contains? accepts) current-states) false)]
+              (let [next-states (map last
+                                     (apply concat
+                                            (map (partial find-transitions c)
+                                                 current-states)))
+                    next-states (apply concat next-states
+                                       (map last
+                                            (apply concat
+                                                   (map (partial find-transitions 'epsilon)
+                                                        next-states))))]
+                (recur (apply hash-set next-states) input))))]
+    (step
+      (set/union
+        #{start}
+        (map last (find-transitions 'epsilon start)))
+      input)))
 
 ; (dea/run-nea dea/nea-with-epsilon "")
 ; [("q_0" "q_1" "q_3") true]
