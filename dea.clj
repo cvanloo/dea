@@ -543,6 +543,79 @@
 ;  :accepts #{"V"}}
 
 
+(def dea-eq
+  {:states #{"z_0" "z_1", "z_2"}
+   :alphabet #{\a \b}
+   :transitions #{["z_0" \a "z_1"]
+                  ["z_0" \b "z_2"]
+                  ["z_1" \a "z_1"]
+                  ["z_1" \b "z_2"]
+                  ["z_2" \a "z_0"]
+                  ["z_2" \b "z_2"]}
+   :start "z_0"
+   :accepts #{"z_0"}})
+
+(def dea-eq'
+  {:states #{"q_0" "q_1", "q_2"}
+   :alphabet #{\a \b}
+   :transitions #{["q_0" \a "q_1"]
+                  ["q_0" \b "q_2"]
+                  ["q_1" \a "q_1"]
+                  ["q_1" \b "q_2"]
+                  ["q_2" \a "q_2"]
+                  ["q_2" \b "q_2"]}
+   :start "q_0"
+   :accepts #{"q_0"}})
+
+; {"z_0" "q_0",
+;  }
+
+(def trs1 (:transitions dea-eq))
+(def trs2 (:transitions dea-eq'))
+(def start1 (:start dea-eq))
+(def start2 (:start dea-eq'))
+
+(defn target
+  [transitions c from]
+  (last (first (filter
+                 (fn [[from' c' _]]
+                   (and (= c c')
+                        (= from from')))
+                 transitions))))
+
+; @todo: check that both states are of the same type (accept/not accept)
+(defn compare-targets
+  [m t1 t2]
+  (case (get m t1 :not-found)
+    t2 :states-equal
+    :not-found :states-new
+    :states-not-equal))
+
+(defn follow-states
+  [s1 s2]
+  (loop [s1 s1
+         s2 s2
+         m {s1 s2}]
+    (let [t1 (target trs1 \b s1)
+          t2 (target trs2 \b s2)
+          eq? (compare-targets m t1 t2)]
+      (case eq?
+        :states-equal true
+        :states-not-equal false
+        :states-new (recur t1 t2 (into m {t1 t2}))))))
+
+(defn nea-eq?
+  [nea-1 nea-2]
+  (let [->dea (comp simplify-with-myhill-nerode remove-unreachable-states nea->dea)
+        dea-1 (->dea nea-1)
+        dea-2 (->dea nea-2)]
+    (and
+      (apply = (map :alphabet [dea-1 dea-2]))
+      (apply = (map (comp count :states) [dea-1 dea-2]))
+      (apply = (map (comp count :accepts) [dea-1 dea-2]))
+      ())))
+
+
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
 ;
