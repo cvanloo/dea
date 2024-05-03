@@ -409,7 +409,7 @@
              :alphabet alphabet
              :transitions (set/union
                             (apply set/union (map ->tr m))
-                            (tr "*reject*" alphabet "*reject*"))
+                            (tr "*reject*" alphabet "*reject*")) ; @todo: don't add reject state unles it is actually reachable
              :start (combine-name (set/union
                                     #{start}
                                     (map last (find-transitions 'epsilon start))))
@@ -522,7 +522,26 @@
 ; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaababa")
 ; ["q_1-q_0-q_3" true]
 
-; 
+; (pprint (dea/nea->dea dea/dea-drehkreuz))
+; {:states ("*reject*" "V" "E"),
+;  :alphabet #{\D \F},
+;  :transitions
+;  (["*reject*" "F" "*reject*"]
+;   ["*reject*" "D" "*reject*"]
+;   ["E" \F "E"]
+;   ["E" \D "V"]
+;   ["V" \D "V"]
+;   ["V" \F "E"]),
+;  :start "V",
+;  :accepts #{"V"}}
+
+; (pprint (dea/remove-unreachable-states (dea/nea->dea dea/dea-drehkreuz)))
+; {:states #{"E" "V"},
+;  :alphabet #{\D \F},
+;  :transitions (["E" \F "E"] ["E" \D "V"] ["V" \D "V"] ["V" \F "E"]),
+;  :start "V",
+;  :accepts #{"V"}}
+
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
