@@ -13,7 +13,7 @@
 
 (defn tr
   [s1 r s2]
-  (map #(vector s1 (str %) s2) r))
+  (map #(vector s1 (first (str %)) s2) r))
 
 (defn make-dea
  "Tries to create a DEA given a transition table.
@@ -567,48 +567,48 @@
    :start "q_0"
    :accepts #{"q_0"}})
 
-(defn follow-states
-  [alphabet transitions1 transitions2 s1 s2]
-  (letfn [(target [transitions c from]
-            (last (first (filter
-                           (fn [[from' c' _]]
-                             (and (= c c')
-                                  (= from from')))
-                           transitions))))
-          (targets [transitions alphabet from]
-            (map
-              (fn [c]
-                (target transitions c from))
-              alphabet))
-          ; @todo: check that both states are of the same type (accept/not accept)
-          (compare-targets [m t1 t2]
-            (let [r (get m t1)]
-              (cond
-                (nil? r) [:states-new t1 t2]
-                (= r t2) [:states-equal]
-                :else [:states-not-equal])))]
-    (loop [[s1 & ss1] [s1]
-           [s2 & ss2] [s2]
-           m {s1 s2}]
-      (let [t1s (targets transitions1 alphabet s1)
-            t2s (targets transitions2 alphabet s2)
-            eqs? (map #(compare-targets m %1 %2) t1s t2s)
-            news (filter #(= :states-new (first %)) eqs?)]
-        (cond
-          (some #(= :states-not-equal (first %)) eqs?)
-          false
-          (not (and (empty? ss1) (empty? news)))
-          (recur
-            (concat ss1 (map #(nth % 1) news))
-            (concat ss2 (map #(nth % 2) news))
-            (reduce (fn [m [_ t1 t2]]
-                      (into m {t1 t2}))
-                    m
-                    news))
-          :else true)))))
-
 (defn nea-eq?
   [nea-1 nea-2]
+  (defn follow-states
+    [alphabet transitions1 transitions2 s1 s2]
+    (letfn [(target [transitions c from]
+              (last (first (filter
+                             (fn [[from' c' _]]
+                               (and (= c c')
+                                    (= from from')))
+                             transitions))))
+            (targets [transitions alphabet from]
+              (map
+                (fn [c]
+                  (target transitions c from))
+                alphabet))
+            ; @todo: check that both states are of the same type (accept/not accept)
+            (compare-targets [m t1 t2]
+              (let [r (get m t1)]
+                (cond
+                  (nil? r) [:states-new t1 t2]
+                  (= r t2) [:states-equal]
+                  :else [:states-not-equal])))]
+      (loop [[s1 & ss1] [s1]
+             [s2 & ss2] [s2]
+             m {s1 s2}]
+        (let [t1s (targets transitions1 alphabet s1)
+              t2s (targets transitions2 alphabet s2)
+              eqs? (map #(compare-targets m %1 %2) t1s t2s)
+              news (filter #(= :states-new (first %)) eqs?)]
+          ;(clojure.pprint/pprint {"s1" s1 "s2" s2 "m" m "t1s" t1s "t2s" t2s "eqs?" eqs? "news" news})
+          (cond
+            (some #(= :states-not-equal (first %)) eqs?)
+            false
+            (not (and (empty? ss1) (empty? news)))
+            (recur
+              (concat ss1 (map #(nth % 1) news))
+              (concat ss2 (map #(nth % 2) news))
+              (reduce (fn [m [_ t1 t2]]
+                        (into m {t1 t2}))
+                      m
+                      news))
+            :else true)))))
   (let [->dea (comp simplify-with-myhill-nerode remove-unreachable-states nea->dea)
         dea-1 (->dea nea-1)
         dea-2 (->dea nea-2)]
@@ -622,6 +622,13 @@
         (:transitions dea-2)
         (:start dea-1)
         (:start dea-2)))))
+
+; user=> (dea/nea-eq? dea/dea-eq dea/dea-eq')
+; false
+; user=> (dea/nea-eq? dea/dea-eq dea/dea-eq)
+; true
+; user=> (dea/nea-eq? dea/dea-not-minimal (dea/simplify-with-myhill-nerode dea/dea-not-minimal))
+; true
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
@@ -641,7 +648,6 @@
     (println (map (partial run-dea (get deas dea)) args))))
 
 
-; @todo: compare two neas
 ; @todo: Mengenoperationen (create/combine new nea from other neas)
 
 ; @todo: pretty print dea
