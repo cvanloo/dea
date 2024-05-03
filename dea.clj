@@ -667,7 +667,11 @@
   [nea-1 nea-2])
 
 (defn complement
-  [nea-1 nea-2])
+  [nea]
+  (let [->dea (comp simplify-with-myhill-nerode remove-unreachable-states nea->dea)
+        dea (->dea nea)]
+    (into dea
+          {:accepts (set/difference (:states dea) (:accepts dea))})))
 
 (defn chain
   [nea-1 nea-2])
@@ -689,8 +693,14 @@
 ;   ["q_5" \0 "q_3"]),
 ;  :start "s",
 ;  :accepts #{"q_1" "q_3"}}
+;
 ; user=> (dea/nea-eq? (dea/alternative dea/dea-l-div-by-2 dea/dea-l-div-by-3) dea/nea-with-epsilon)
 ; true
+;
+; user=> (dea/run-dea (dea/complement dea/dea-even) "10")
+; ["E" false]
+; user=> (dea/run-dea (dea/complement dea/dea-even) "11")
+; ["O" true]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
