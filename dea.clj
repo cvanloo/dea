@@ -630,6 +630,68 @@
 ; user=> (dea/nea-eq? dea/dea-not-minimal (dea/simplify-with-myhill-nerode dea/dea-not-minimal))
 ; true
 
+(defn unique-name
+  ([states]
+   (unique-name states "s"))
+  ([states name]
+   (if (contains? states name)
+     (recur states (str name "'"))
+     name)))
+
+
+(def dea-l-div-by-2
+  (make-dea
+    ['q_1 \0 "q_2"]
+    ["q_2" \0 "q_1"]))
+
+(def dea-l-div-by-3
+  (make-dea
+    ['q_3 \0 "q_4"]
+    ["q_4" \0 "q_5"]
+    ["q_5" \0 "q_3"]))
+
+
+(defn alternative
+  [nea-1 nea-2]
+  (let [states (apply set/union (map :states [nea-1 nea-2]))
+        new-start (unique-name states)]
+    {:states (conj states new-start)
+     :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
+     :transitions (conj (apply set/union (map :transitions [nea-1 nea-2]))
+                        [new-start 'epsilon (:start nea-1)]
+                        [new-start 'epsilon (:start nea-2)])
+     :start new-start
+     :accepts (apply set/union (map :accepts [nea-1 nea-2]))}))
+
+(defn product
+  [nea-1 nea-2])
+
+(defn complement
+  [nea-1 nea-2])
+
+(defn chain
+  [nea-1 nea-2])
+
+(defn *
+  [nea-1 nea-2])
+
+
+; user=> (pprint (dea/alternative dea/dea-l-div-by-2 dea/dea-l-div-by-3))
+; {:states #{"s" "q_2" "q_1" "q_3" "q_4" "q_5"},
+;  :alphabet #{\0},
+;  :transitions
+;  (["s" epsilon "q_3"]
+;   ["s" epsilon "q_1"]
+;   ["q_1" \0 "q_2"]
+;   ["q_2" \0 "q_1"]
+;   ["q_3" \0 "q_4"]
+;   ["q_4" \0 "q_5"]
+;   ["q_5" \0 "q_3"]),
+;  :start "s",
+;  :accepts #{"q_1" "q_3"}}
+; user=> (dea/nea-eq? (dea/alternative dea/dea-l-div-by-2 dea/dea-l-div-by-3) dea/nea-with-epsilon)
+; true
+
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
@@ -646,7 +708,6 @@
          "drehkreuz" dea-drehkreuz
          "natural-numbers" dea-whole-numbers}]
     (println (map (partial run-dea (get deas dea)) args))))
-
 
 ; @todo: Mengenoperationen (create/combine new nea from other neas)
 
