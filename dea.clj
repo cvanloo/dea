@@ -707,6 +707,20 @@
      :start new-start
      :accepts #{new-start}}))
 
+;(def + #(chain % (* %)))
+
+(defn +
+  [{:keys [states transitions start accepts] :as nea}]
+  (let [new-start (unique-name states)]
+    {:states (conj states new-start)
+     :alphabet (:alphabet nea)
+     :transitions (concat
+                    transitions
+                    [[new-start 'epsilon start]]
+                    (map #(vector % 'epsilon new-start) accepts))
+     :start new-start
+     :accepts accepts}))
+
 
 ; user=> (pprint (dea/alternative dea/dea-l-div-by-2 dea/dea-l-div-by-3))
 ; {:states #{"s" "q_2" "q_1" "q_3" "q_4" "q_5"},
@@ -750,6 +764,19 @@
 ; user=> (dea/run-nea (dea/* dea/nea-3-as) "aaaa")
 ; [#{"q_1"} false]
 ; user=> (dea/run-nea (dea/* dea/nea-3-as) "aaaaaa")
+; [#{"s" "q_0" "q_3"} true]
+;
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "")
+; [#{"q_0"} false]
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aa")
+; [#{"q_2"} false]
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaa")
+; [#{"s" "q_0" "q_3"} true]
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaaa")
+; [#{"q_1"} false]
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaaaa")
+; [#{"q_2"} false]
+; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaaaaa")
 ; [#{"s" "q_0" "q_3"} true]
 
 
