@@ -675,6 +675,8 @@
 
 (defn product
   [nea-1 nea-2])
+; @todo: haven't got a clue
+;   do we even need that?
 
 (defn complement
   [nea]
@@ -796,8 +798,6 @@
          "drehkreuz" dea-drehkreuz
          "natural-numbers" dea-whole-numbers}]
     (println (map (partial run-dea (get deas dea)) args))))
-
-; @todo: Mengenoperationen (create/combine new nea from other neas)
 
 ; @todo: pretty print dea
 ; @todo: regex to nea (to dea)
