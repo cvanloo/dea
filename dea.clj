@@ -567,60 +567,45 @@
    :start "q_0"
    :accepts #{"q_0"}})
 
-; {"z_0" "q_0",
-;  }
-
-(def trs1 (:transitions dea-eq))
-(def trs2 (:transitions dea-eq'))
-(def start1 (:start dea-eq))
-(def start2 (:start dea-eq'))
-(def alph (:alphabet dea-eq))
-
-(defn target
-  [transitions c from]
-  (last (first (filter
-                 (fn [[from' c' _]]
-                   (and (= c c')
-                        (= from from')))
-                 transitions))))
-
-(defn targets
-  [transitions alphabet from]
-  (map
-    (fn [c]
-      (target transitions c from))
-    alphabet))
-
-; @todo: check that both states are of the same type (accept/not accept)
-(defn compare-targets
-  [m t1 t2]
-  (let [r (get m t1)]
-    (cond
-      (nil? r) [:states-new t1 t2]
-      (= r t2) [:states-equal]
-      :else [:states-not-equal])))
-
 (defn follow-states
-  [s1 s2]
-  (loop [[s1 & ss1] [s1]
-         [s2 & ss2] [s2]
-         m {s1 s2}]
-    (let [t1s (targets trs1 alph s1)
-          t2s (targets trs2 alph s2)
-          eqs? (map #(compare-targets m %1 %2) t1s t2s)
-          news (filter #(= :states-new (first %)) eqs?)]
-      (cond
-        (some #(= :states-not-equal (first %)) eqs?)
-        false
-        (not (and (empty? ss1) (empty? news)))
-        (recur
-          (concat ss1 (map #(nth % 1) news))
-          (concat ss2 (map #(nth % 2) news))
-          (reduce (fn [m [_ t1 t2]]
-                    (into m {t1 t2}))
-                  m
-                  news))
-        :else true))))
+  [alphabet transitions1 transitions2 s1 s2]
+  (letfn [(target [transitions c from]
+            (last (first (filter
+                           (fn [[from' c' _]]
+                             (and (= c c')
+                                  (= from from')))
+                           transitions))))
+          (targets [transitions alphabet from]
+            (map
+              (fn [c]
+                (target transitions c from))
+              alphabet))
+          ; @todo: check that both states are of the same type (accept/not accept)
+          (compare-targets [m t1 t2]
+            (let [r (get m t1)]
+              (cond
+                (nil? r) [:states-new t1 t2]
+                (= r t2) [:states-equal]
+                :else [:states-not-equal])))]
+    (loop [[s1 & ss1] [s1]
+           [s2 & ss2] [s2]
+           m {s1 s2}]
+      (let [t1s (targets transitions1 alphabet s1)
+            t2s (targets transitions2 alphabet s2)
+            eqs? (map #(compare-targets m %1 %2) t1s t2s)
+            news (filter #(= :states-new (first %)) eqs?)]
+        (cond
+          (some #(= :states-not-equal (first %)) eqs?)
+          false
+          (not (and (empty? ss1) (empty? news)))
+          (recur
+            (concat ss1 (map #(nth % 1) news))
+            (concat ss2 (map #(nth % 2) news))
+            (reduce (fn [m [_ t1 t2]]
+                      (into m {t1 t2}))
+                    m
+                    news))
+          :else true)))))
 
 (defn nea-eq?
   [nea-1 nea-2]
@@ -631,7 +616,12 @@
       (apply = (map :alphabet [dea-1 dea-2]))
       (apply = (map (comp count :states) [dea-1 dea-2]))
       (apply = (map (comp count :accepts) [dea-1 dea-2]))
-      ())))
+      (follow-states
+        (:alphabet dea-1)
+        (:transitions dea-1)
+        (:transitions dea-2)
+        (:start dea-1)
+        (:start dea-2)))))
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
