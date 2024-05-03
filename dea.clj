@@ -650,6 +650,16 @@
     ["q_4" \0 "q_5"]
     ["q_5" \0 "q_3"]))
 
+(def nea-3-as
+  (make-dea
+    ["q_0" \a "q_1"]
+    ["q_1" \a "q_2"]
+    ["q_2" \a 'q_3]))
+
+(def nea-2-bs
+  (make-dea
+    ["z_0" \b "z_1"]
+    ["z_1" \b 'z_2]))
 
 (defn alternative
   [nea-1 nea-2]
@@ -673,8 +683,17 @@
     (into dea
           {:accepts (set/difference (:states dea) (:accepts dea))})))
 
+; @fixme: have to rename states coming from different NEAs before merging the sets!!!
 (defn chain
-  [nea-1 nea-2])
+  [nea-1 nea-2]
+  {:states (apply set/union (map :states [nea-1 nea-2]))
+   :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
+   :transitions (concat (apply set/union (map :transitions [nea-1 nea-2]))
+                        (map (fn [s]
+                               [s 'epsilon (:start nea-2)])
+                             (:accepts nea-1)))
+   :start (:start nea-1)
+   :accepts (:accepts nea-2)})
 
 (defn *
   [nea-1 nea-2])
@@ -701,6 +720,15 @@
 ; ["E" false]
 ; user=> (dea/run-dea (dea/complement dea/dea-even) "11")
 ; ["O" true]
+;
+; user=> (dea/run-nea (dea/chain dea/nea-3-as dea/nea-2-bs) "aaa")
+; [#{"q_3" "z_0"} false]
+; user=> (dea/run-nea (dea/chain dea/nea-3-as dea/nea-2-bs) "aaab")
+; [#{"z_1"} false]
+; user=> (dea/run-nea (dea/chain dea/nea-3-as dea/nea-2-bs) "aaabb")
+; [#{"z_2"} true]
+; user=> (dea/run-nea (dea/chain dea/nea-3-as dea/nea-2-bs) "aaabbb")
+; [#{} false]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
