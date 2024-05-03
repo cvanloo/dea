@@ -185,6 +185,26 @@
 ;  :start "z_0"
 ;  :accepts #{"z_3"}}
 
+(defn remove-unreachable-states
+  [{:keys [alphabet transitions start accepts] :as dea}]
+  (letfn [(transition-targets [s]
+            (map last (filter
+                        #(= s (first %))
+                        transitions)))]
+    (loop [[s & ss] [start]
+           states #{}]
+      (if (nil? s)
+        {:states states
+         :alphabet alphabet
+         :transitions (filter #(contains? states (first %)) transitions)
+         :start start
+         :accepts (set/intersection accepts states)}
+        (recur
+          (concat ss (filter
+                       #(not (contains? states %))
+                       (transition-targets s)))
+          (conj states s))))))
+
 ; must start with a b
 ; can contain at most one b in the middle
 ; after the middle b, only exactly one more a can appear
@@ -502,6 +522,7 @@
 ; user=> (dea/run-dea (dea/nea->dea dea/nea-a-in-3rd-to-last) "aaababa")
 ; ["q_1-q_0-q_3" true]
 
+; 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
