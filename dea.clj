@@ -49,7 +49,6 @@
       (every? (partial apply has-exactly-one-transition?)
               (map-2 states alphabet)))))
 
-
 ;     | F D
 ; ---------
 ; V/E | E V
@@ -130,7 +129,7 @@
               (fn [key old]
                 (if (=
                      (contains? accepts (first key))
-            partial          (contains? accepts (or (second key) (first key))))
+                     (contains? accepts (or (second key) (first key))))
                   old
                   false))))
           (mark-transition-into-already-marked [table]
@@ -155,6 +154,8 @@
         mark-non-accepts
         mark-transition-into-already-marked
         get-same-states)))
+
+(def is-minimal? (comp empty? myhill-nerode))
 
 (defn merge-states
   [{:keys [states alphabet transitions start accepts]} s1 s2]
@@ -821,3 +822,4 @@
 ;   - simplify dea
 ;   - run dea
 ;   - print steps
+; @todo: clojure.spec? type nea, dea
