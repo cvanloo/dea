@@ -683,6 +683,7 @@
         new-start (unique-name states)]
     {:states (conj states new-start)
      :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
+     ; @fixme: transitions also need to be updated with the unique-names
      :transitions (conj (apply set/union (map :transitions [nea-1 nea-2]))
                         [new-start 'epsilon (:start nea-1)]
                         [new-start 'epsilon (:start nea-2)])
@@ -701,17 +702,20 @@
     (into dea
           {:accepts (set/difference (:states dea) (:accepts dea))})))
 
-; @fixme: have to rename states coming from different NEAs before merging the sets!!!
 (defn chain
   [nea-1 nea-2]
-  {:states (apply set/union (map :states [nea-1 nea-2]))
-   :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
-   :transitions (concat (apply set/union (map :transitions [nea-1 nea-2]))
-                        (map (fn [s]
-                               [s 'epsilon (:start nea-2)])
-                             (:accepts nea-1)))
-   :start (:start nea-1)
-   :accepts (:accepts nea-2)})
+  (let [[states-1 states-2] (map :states [nea-1 nea-2])
+        states-2 (map (partial unique-name states-1) states-2)
+        states (apply hash-set (set/union states-1 states-2))]
+    {:states states
+     :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
+     ; @fixme: transitions also need to be updated with the unique-names
+     :transitions (concat (apply set/union (map :transitions [nea-1 nea-2]))
+                          (map (fn [s]
+                                 [s 'epsilon (:start nea-2)])
+                               (:accepts nea-1)))
+     :start (:start nea-1)
+     :accepts (:accepts nea-2)}))
 
 (defn *
   [{:keys [states transitions start accepts] :as nea}]
