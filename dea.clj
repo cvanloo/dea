@@ -358,10 +358,13 @@
 ; (dea/run-nea dea/nea-baa "baa")
 ; [#{"q_2" "q_1" "q_0"} true]
 
-(defn find-transitions [c from]
-  (filter (fn [[from' c' _]]
-            (and (= from' from) (= c' c)))
-          (:transitions nea-with-epsilon)))
+(defn unique-name
+  ([states]
+   (unique-name states "s"))
+  ([states name]
+   (if (contains? states name)
+     (recur states (str name "'"))
+     name)))
 
 (defn nea->dea
   [{:keys [states alphabet transitions start accepts] :as nea}]
@@ -630,15 +633,6 @@
 ; user=> (dea/nea-eq? dea/dea-not-minimal (dea/simplify-with-myhill-nerode dea/dea-not-minimal))
 ; true
 
-(defn unique-name
-  ([states]
-   (unique-name states "s"))
-  ([states name]
-   (if (contains? states name)
-     (recur states (str name "'"))
-     name)))
-
-
 (def dea-l-div-by-2
   (make-dea
     ['q_1 \0 "q_2"]
@@ -661,6 +655,7 @@
     ["z_0" \b "z_1"]
     ["z_1" \b 'z_2]))
 
+; @fixme: have to rename states coming from different NEAs before merging the sets!!!
 (defn alternative
   [nea-1 nea-2]
   (let [states (apply set/union (map :states [nea-1 nea-2]))
