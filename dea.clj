@@ -675,10 +675,11 @@
     ["z_0" \b "z_1"]
     ["z_1" \b 'z_2]))
 
-; @fixme: have to rename states coming from different NEAs before merging the sets!!!
 (defn alternative
   [nea-1 nea-2]
-  (let [states (apply set/union (map :states [nea-1 nea-2]))
+  (let [[states-1 states-2] (map :states [nea-1 nea-2])
+        states-2 (map (partial unique-name states-1) states-2)
+        states (apply hash-set (set/union states-1 states-2))
         new-start (unique-name states)]
     {:states (conj states new-start)
      :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
@@ -753,6 +754,13 @@
 ;  :start "s",
 ;  :accepts #{"q_1" "q_3"}}
 ;
+; user=> (pprint (dea/alternative (dea/make-nea-for-char \a) (dea/make-nea-for-char \b)))
+; {:states #{"s" "q_0'" "q_1'" "q_1" "q_0"},
+;  :alphabet #{\a \b},
+;  :transitions #{["s" epsilon "q_0"] ["q_0" \a "q_1"] ["q_0" \b "q_1"]},
+;  :start "s",
+;  :accepts #{"q_1"}}
+;
 ; user=> (dea/nea-eq? (dea/alternative dea/dea-l-div-by-2 dea/dea-l-div-by-3) dea/nea-with-epsilon)
 ; true
 ;
@@ -796,7 +804,54 @@
 ; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaaaaa")
 ; [#{"s" "q_0" "q_3"} true]
 
+; @todo: single step?
+(defn nea->vnea
+  [nea])
 
+(defn nea->regex
+  [nea])
+
+
+(defn make-nea-for-char
+  [c]
+  {:states #{"q_0" "q_1"}
+   :alphabet #{c}
+   :transitions #{["q_0" c "q_1"]}
+   :start "q_0"
+   :accepts #{"q_1"}})
+
+(defn make-nea-for-chars
+  [cs]
+  (let [alphabet (apply hash-set cs)]
+    {:states #{"q_0" "q_1"}
+     :alphabet alphabet
+     :transitions (tr "q_0" alphabet "q_1")
+     :start "q_0"
+     :accepts #{"q_1"}}))
+
+; r = ab|cd
+; (alternative
+;   (chain
+;     (make-nea-for-char \a)
+;     (make-nea-for-char \b))
+;   (chain
+;     (make-nea-for-char \c)
+;     (make-nea-for-char \d)))
+
+; r = (ab)*c
+; (chain
+;   (* (chain
+;        (make-nea-for-char \a)
+;        (make-nea-for-char \b)))
+;   (make-nea-for-char \c))
+
+; r = (ab)+
+; (+ (chain
+;      (make-nea-for-char \a)
+;      (make-nea-for-char \b)))
+
+(defn regex->nea
+  [regex])
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
