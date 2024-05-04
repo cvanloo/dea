@@ -31,6 +31,25 @@
                 (apply hash-set (map str (filter symbol? (map first transitions))))
                 (apply hash-set (map str (filter symbol? (map last transitions)))))}))
 
+(defn is-dea?
+  [{:keys [alphabet states transitions] :as nea-or-dea}]
+  (letfn [(has-exactly-one-transition? [from c]
+            (= 1 (count (filter (fn [[from' c' _]]
+                                  (and (= from' from) (= c' c)))
+                                transitions))))
+          (map-2 [xs ys]
+            (mapcat
+              (fn [x]
+                (map
+                  (fn [y] [x y])
+                  ys))
+              xs))]
+    (and
+      (empty? (filter (fn [[_ c _]] (= c 'epsilon)) transitions))
+      (every? (partial apply has-exactly-one-transition?)
+              (map-2 states alphabet)))))
+
+
 ;     | F D
 ; ---------
 ; V/E | E V
@@ -55,12 +74,12 @@
       (apply make-dea
         (set/union
           (tr "q_0" (range 1 10) "p")
-          [["q_0" "-" "m"] ["q_0" "0" "z"]]
+          [["q_0" \- "m"] ["q_0" \0 "z"]]
           (tr "p" (range 0 10) "p")
-          [["p" "-" "e"]]
+          [["p" \- "e"]]
           (tr "e" alphabet "e")
           (tr "m" (range 1 10) "p")
-          [["m" "0" "e"] ["m" "-" "e"]]
+          [["m" \0 "e"] ["m" \- "e"]]
           (tr "z" alphabet "e")))
       {:start "q_0"
        :accepts #{"p" "z"}})))
