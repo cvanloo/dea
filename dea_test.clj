@@ -44,11 +44,71 @@
            ["e" false] (run "1-5")
            ["m" false] (run "-")))))
 
-; @todo: test neas / run-nea
-;        - nea-baa
-;        - nea-with-epsilon
-;        - nea-a-in-3rd-to-last
-;        - nea-with-epsilon-2
+(deftest run-nea-baa-test
+  (let [run (partial dea/run-nea dea/nea-baa)]
+    (testing "BAA accepts words starting with 'b', any number of 'a's, and ending with two 'aa's or a 'ba'. Or the empty word."
+      (are [expected actual] (= expected actual)
+           [#{"q_0"} true] (run "")
+           [#{} false] (run "a")
+           [#{} false] (run "aa")
+           [#{} false] (run "aab")
+           [#{} false] (run "aaabaa")
+           [#{"q_1"} false] (run "b")
+           [#{"q_2"} false] (run "bb")
+           [#{} false] (run "bbb")
+           [#{} false] (run "bbb")
+           [#{"q_0"} true] (run "bba")
+           [#{"q_2" "q_1"} false] (run "ba")
+           [#{"q_2" "q_1" "q_0"} true] (run "baa")
+           [#{"q_2" "q_1" "q_0"} true] (run "baaa")
+           [#{"q_2" "q_1"} false] (run "baaab")
+           [#{"q_2" "q_1" "q_0"} true] (run "baaaba")
+           [#{"q_2" "q_1" "q_0"} true] (run "baaabaa")
+           [#{"q_2" "q_1"} false] (run "baaabaab")))))
+
+(deftest run-nea-with-epsilon-test
+  (let [run (partial dea/run-nea dea/nea-with-epsilon)]
+    (testing "With Epsilon accepts word where |word| is divisible by 2 or 3."
+      (are [expected actual] (= expected actual)
+           [#{"q_0" "q_1" "q_3"} true] (run "")
+           [#{"q_2" "q_4"} false] (run "0")
+           [#{"q_1" "q_5"} true] (run "00")
+           [#{"q_2" "q_3"} true] (run "000")
+           [#{"q_1" "q_4"} true] (run "0000")
+           [#{"q_2" "q_5"} false] (run "00000")
+           [#{"q_1" "q_3"} true] (run "000000")))))
+
+(deftest run-nea-a-in-3rd-to-last-test
+  (let [run (partial dea/run-nea dea/nea-a-in-3rd-to-last)]
+    (testing "A in 3rd to last accepts inputs where an a is in the 3rd to last position."
+      (are [expected actual] (= expected actual)
+           [#{"q_0"} false] (run "")
+           [#{"q_0"} false] (run "b")
+           [#{"q_0" "q_1"} false] (run "a")
+           [#{"q_0" "q_1" "q_2"} false] (run "aa")
+           [#{"q_0" "q_2"} false] (run "ab")
+           [#{"q_0" "q_1" "q_2" "q_3"} true] (run "aaa")
+           [#{"q_0" "q_1" "q_3"} true] (run "aba")
+           [#{"q_2" "q_0" "q_3"} true] (run "aaab")
+           [#{"q_2" "q_1" "q_0" "q_3"} true] (run "aaaa")
+           [#{"q_2" "q_0"} false] (run "aaaabab")
+           [#{"q_0" "q_3"} true] (run "aaaababb")))))
+
+(deftest run-nea-with-epsilon-2-test
+  (let [run (partial dea/run-nea dea/nea-with-epsilon-2)]
+    (testing "Similar to nea-baa, but also accepts any number of leading and trailing 'a's."
+      (are [expected actual] (= expected actual)
+           [#{"q_2" "q_0"} true] (run "")
+           [#{"q_2" "q_0"} true] (run "a")
+           [#{"q_2" "q_0"} true] (run "aa")
+           [#{"q_2" "q_0"} true] (run "aaa")
+           [#{"q_1"} false] (run "aaab")
+           [#{"q_2" "q_0"} true] (run "aaabba")
+           [#{"q_2" "q_1" "q_0"} true] (run "aaabaa")
+           [#{"q_2" "q_1" "q_0"} true] (run "aaabaaa")
+           [#{"q_2" "q_1" "q_0"} true] (run "aaabaaaa")
+           [#{"q_2" "q_1"} false] (run "aaabaaaab")
+           [#{"q_2" "q_1" "q_0"} true] (run "aaabaaaaba")))))
 
 ; (deftest is-minimal?-test)
 ; @todo: prop test: (is (dea/is-minimal? (dea/simplify-with-myhill-nerode some-possibly-not-minimal-dea)))

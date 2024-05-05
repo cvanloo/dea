@@ -295,7 +295,7 @@
                 (set/union epsilon-states (take-all-epsilons epsilon-states)))))
           (step [current-states [c & input]]
             (if (nil? c)
-              [current-states
+              [(apply hash-set current-states)
                (or (some (partial contains? accepts) current-states) false)]
               (let [next-states (targets c current-states)
                     next-states (set/union next-states (take-all-epsilons next-states))]
