@@ -10,7 +10,8 @@
 (ns dea
   (:require [clojure.set :as set]
             [clojure.string :as str]
-            [instaparse.core :as insta]))
+            [instaparse.core :as insta]
+            [clojure.core.match :refer [match]]))
 
 (defn tr
   [s1 r s2]
@@ -718,7 +719,7 @@
      :start (:start nea-1)
      :accepts (:accepts nea-2)}))
 
-(defn *
+(defn star
   [{:keys [states transitions start accepts] :as nea}]
   (let [new-start (unique-name states)]
     {:states (conj states new-start)
@@ -732,7 +733,7 @@
 
 ;(def + #(chain % (* %)))
 
-(defn +
+(defn plus
   [{:keys [states transitions start accepts] :as nea}]
   (let [new-start (unique-name states)]
     {:states (conj states new-start)
@@ -874,8 +875,34 @@
      range = letter <'-'> letter
      <ranges> = range ranges | range"))
 
+(defn char-range
+  [s e]
+  (map char (range (int s) (inc (int e)))))
+
+(defn parse-one-of-args-list
+  [ls]
+  (reduce (fn [alphabet l]
+            (match l
+                   [:letter c] (conj alphabet c)
+                   [:range [:letter s] [:letter e]] (set/union
+                                                      alphabet
+                                                      (apply char-range (map first [s e])))))
+          #{}
+          ls))
+
 (defn regex->nea
-  [regex])
+  [regex]
+  (match [regex]
+         [[:letter c]] (make-nea-for-char (first c))
+         [[:star r]] (star (regex->nea r))
+         [[:plus r]] (plus (regex->nea r))
+         [[:one-of & ls]] (make-nea-for-chars (parse-one-of-args-list ls))
+         ;[:range [:letter s] [:letter e]] (make-nea-for-chars (apply char-range (map first [s e])))
+         [[:alternative [:left & l] [:right & r]]] (alternative (regex->nea l) (regex->nea r))
+         [[r]] (regex->nea r)
+         [[r & rs]] (chain (regex->nea r) (regex->nea rs))
+         ))
+
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
 ; ([V true] [V true] [E false] [E false] [V true])
