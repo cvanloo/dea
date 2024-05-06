@@ -863,14 +863,14 @@
      <regex> = letters | group | alternative | star | plus | one-of
      <letters> = letter letters | letter
      letter = #'[a-zA-Z0-9]'
-     <group> = <'('> regex <')'>
+     <group> = <'('> regices <')'>
      alternative = left <'|'> right
      left = regex
      right = regex
      star = regex <'*'>
      plus = regex <'+'>
      one-of = <'['> letters-or-ranges <']'>
-     <letters-or-ranges> = (letters | ranges) letters-or-ranges | (letters | range)
+     <letters-or-ranges> = (letter | range) letters-or-ranges | (letter | range)
      range = letter <'-'> letter
      <ranges> = range ranges | range"))
 
