@@ -421,9 +421,9 @@
    {:keys [states alphabet transitions start accepts] :as nea}]
   (let [name-changes (old-to-new-name rename-fun states)
         states' (map second name-changes)
-        transitions' (update-transitions transitions name-changes)
+        transitions' (apply hash-set (update-transitions transitions name-changes))
         start' (second (first (filter #(= start (first %)) name-changes)))
-        accepts' (map second (filter #(contains? accepts (first %)) name-changes ))]
+        accepts' (apply hash-set (map second (filter #(contains? accepts (first %)) name-changes )))]
     {:states states'
      :alphabet alphabet
      :transitions transitions'
@@ -753,18 +753,22 @@
 
 (defn chain
   [nea-1 nea-2]
-  (let [[states-1 states-2] (map :states [nea-1 nea-2])
-        states-2 (map (partial unique-name states-1) states-2)
-        states (apply hash-set (set/union states-1 states-2))]
-    {:states states
-     :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
-     ; @fixme: transitions also need to be updated with the unique-names
-     :transitions (concat (apply set/union (map :transitions [nea-1 nea-2]))
-                          (map (fn [s]
-                                 [s 'epsilon (:start nea-2)])
-                               (:accepts nea-1)))
-     :start (:start nea-1)
-     :accepts (:accepts nea-2)}))
+  (let [states-1 (:states nea-1)
+        nea-2 (rename-nea (partial unique-name states-1) nea-2)
+        states-2 (:states nea-2)
+        states' (apply hash-set (set/union states-1 states-2))
+        start' (:start nea-1)
+        alphabet' (apply set/union (map :alphabet [nea-1 nea-2]))
+        transitions' (concat (apply set/union (map :transitions [nea-1 nea-2]))
+                             (map (fn [s]
+                                    [s 'epsilon (:start nea-2)])
+                                  (:accepts nea-1)))
+        accepts' (:accepts nea-2)]
+    {:states states'
+     :alphabet alphabet'
+     :transitions transitions'
+     :start start'
+     :accepts accepts'}))
 
 (defn star
   [{:keys [states transitions start accepts] :as nea}]
@@ -978,6 +982,19 @@
 ; [#{} false]
 ; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "ab")
 ; [#{} false]
+
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "")
+; [#{"s" "q_0" "q_0''"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "b")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "ab")
+; [#{"q_1'"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "abc")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "abcd")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "cd")
+; [#{"q_1''" "q_0''"} true]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
