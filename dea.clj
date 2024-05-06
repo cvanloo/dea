@@ -388,6 +388,32 @@
      (recur states (str name "'"))
      name)))
 
+(defn rename-incoming
+  [old-name new-name [from c to]]
+  (if (= to old-name)
+    [from c new-name]
+    [from c to]))
+
+(defn rename-outgoing
+  [old-name new-name [from c to]]
+  (if (= from old-name)
+    [new-name c to]
+    [from c to]))
+
+(defn rename-nea
+  [rename-fun
+   {:keys [states alphabet transitions start accepts] :as nea}]
+  (reduce
+    (fn [transitions state]
+      (let [new-name (rename-fun state)]
+        (->> transitions
+             (map (partial rename-incoming state new-name))
+             (map (partial rename-outgoing state new-name)))))
+    transitions
+    states))
+
+; (rename-nea (partial unique-name forbidden-states) nea)
+
 (defn nea->dea
   [{:keys [states alphabet transitions start accepts] :as nea}]
   (letfn [(find-transitions [c from]
@@ -902,6 +928,22 @@
          [[r]] (regex->nea r)
          [[r & rs]] (chain (regex->nea r) (regex->nea rs))
          ))
+
+; (dea/regex->nea (vec (rest (dea/regex-bnf "a(b|c)d"))))
+
+
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "")
+; [#{"s" "q_0"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "a")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aa")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaa")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaa")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaab")
+; [#{} false]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
