@@ -723,18 +723,21 @@
 
 (defn alternative
   [nea-1 nea-2]
-  (let [[states-1 states-2] (map :states [nea-1 nea-2])
-        states-2 (map (partial unique-name states-1) states-2)
-        states (apply hash-set (set/union states-1 states-2))
-        new-start (unique-name states)]
-    {:states (conj states new-start)
-     :alphabet (apply set/union (map :alphabet [nea-1 nea-2]))
-     ; @fixme: transitions also need to be updated with the unique-names
-     :transitions (conj (apply set/union (map :transitions [nea-1 nea-2]))
-                        [new-start 'epsilon (:start nea-1)]
-                        [new-start 'epsilon (:start nea-2)])
-     :start new-start
-     :accepts (apply set/union (map :accepts [nea-1 nea-2]))}))
+  (let [states-1 (:states nea-1)
+        nea-2 (rename-nea (partial unique-name states-1) nea-2)
+        states-2 (:states nea-2)
+        states' (apply hash-set (set/union states-1 states-2))
+        start' (unique-name states')
+        alphabet' (apply set/union (map :alphabet [nea-1 nea-2]))
+        transitions' (conj (apply set/union (map :transitions [nea-1 nea-2]))
+                           [start' 'epsilon (:start nea-1)]
+                           [start' 'epsilon (:start nea-2)])
+        accepts' (apply set/union (map :accepts [nea-1 nea-2]))]
+    {:states (conj states' start')
+     :alphabet alphabet'
+     :transitions transitions'
+     :start start'
+     :accepts accepts'}))
 
 (defn product
   [nea-1 nea-2])
@@ -961,6 +964,19 @@
 ; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaa")
 ; [#{"s" "q_1" "q_0"} true]
 ; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaab")
+; [#{} false]
+
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "")
+; [#{"s" "q_0'" "q_0"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "c")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "a")
+; [#{"q_1"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "b")
+; [#{"q_1'"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "ba")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "ab")
 ; [#{} false]
 
 
