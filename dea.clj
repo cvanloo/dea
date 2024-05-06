@@ -400,17 +400,35 @@
     [new-name c to]
     [from c to]))
 
+(defn old-to-new-name
+  [rename-fun states]
+  (map (fn [state]
+         [state (rename-fun state)])
+       states))
+
+(defn update-transitions
+  [transitions name-changes]
+  (reduce
+    (fn [transitions [old-name new-name]]
+      (->> transitions
+           (map (partial rename-incoming old-name new-name))
+           (map (partial rename-outgoing old-name new-name))))
+    transitions
+    name-changes))
+
 (defn rename-nea
   [rename-fun
    {:keys [states alphabet transitions start accepts] :as nea}]
-  (reduce
-    (fn [transitions state]
-      (let [new-name (rename-fun state)]
-        (->> transitions
-             (map (partial rename-incoming state new-name))
-             (map (partial rename-outgoing state new-name)))))
-    transitions
-    states))
+  (let [name-changes (old-to-new-name rename-fun states)
+        states' (map second name-changes)
+        transitions' (update-transitions transitions name-changes)
+        start' (second (first (filter #(= start (first %)) name-changes)))
+        accepts' (map second (filter #(contains? accepts (first %)) name-changes ))]
+    {:states states'
+     :alphabet alphabet
+     :transitions transitions'
+     :start start'
+     :accepts accepts'}))
 
 ; (rename-nea (partial unique-name forbidden-states) nea)
 
