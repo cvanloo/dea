@@ -943,10 +943,11 @@
 
 (defn regex->nea
   [regex]
+  ;(println regex)
   (match [regex]
          [[:letter c]] (make-nea-for-char (first c))
-         [[:star r]] (star (regex->nea r))
-         [[:plus r]] (plus (regex->nea r))
+         [[:star & r]] (star (regex->nea r))
+         [[:plus & r]] (plus (regex->nea r))
          [[:one-of & ls]] (make-nea-for-chars (parse-one-of-args-list ls))
          ;[:range [:letter s] [:letter e]] (make-nea-for-chars (apply char-range (map first [s e])))
          [[:alternative [:left & l] [:right & r]]] (alternative (regex->nea l) (regex->nea r))
@@ -995,6 +996,26 @@
 ; [#{} false]
 ; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "cd")
 ; [#{"q_1''" "q_0''"} true]
+
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "")
+; [#{"s" "q_0"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "a")
+; [#{"q_0'" "q_1"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "ab")
+; [#{"s" "q_1'" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "aba")
+; [#{"q_0'" "q_1"} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "abab")
+; [#{"s" "q_1'" "q_0"} true]
+
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "cd")
+; [#{} false]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0123")
+; [#{"s" "q_1" "q_0"} true]
+; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0123a")
+; [#{} false]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
