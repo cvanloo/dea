@@ -9,7 +9,8 @@
 ; > *e ; show exception / stack trace
 (ns dea
   (:require [clojure.set :as set]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [instaparse.core :as insta]))
 
 (defn tr
   [s1 r s2]
@@ -834,6 +835,7 @@
      :accepts #{"q_1"}}))
 
 ; r = ab|cd
+; r = (ab)|(cd)
 ; (alternative
 ;   (chain
 ;     (make-nea-for-char \a)
@@ -853,6 +855,18 @@
 ; (+ (chain
 ;      (make-nea-for-char \a)
 ;      (make-nea-for-char \b)))
+
+(def regex-bnf
+  (insta/parser
+    "S = regices
+     regices = regex regices | regex
+     <regex> = letters | group | alternative | star | plus
+     letters = letter letters | letter
+     <letter> = #'[a-zA-Z0-9]'
+     <group> = <'('> regex <')'>
+     alternative = regex <'|'> regex
+     star = regex <'*'>
+     plus = regex <'+'>"))
 
 (defn regex->nea
   [regex])
