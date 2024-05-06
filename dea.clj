@@ -859,14 +859,20 @@
 (def regex-bnf
   (insta/parser
     "S = regices
-     regices = regex regices | regex
-     <regex> = letters | group | alternative | star | plus
-     letters = letter letters | letter
-     <letter> = #'[a-zA-Z0-9]'
+     <regices> = regex regices | regex
+     <regex> = letters | group | alternative | star | plus | one-of
+     <letters> = letter letters | letter
+     letter = #'[a-zA-Z0-9]'
      <group> = <'('> regex <')'>
-     alternative = regex <'|'> regex
+     alternative = left <'|'> right
+     left = regex
+     right = regex
      star = regex <'*'>
-     plus = regex <'+'>"))
+     plus = regex <'+'>
+     one-of = <'['> letters-or-ranges <']'>
+     <letters-or-ranges> = (letters | ranges) letters-or-ranges | (letters | range)
+     range = letter <'-'> letter
+     <ranges> = range ranges | range"))
 
 (defn regex->nea
   [regex])
