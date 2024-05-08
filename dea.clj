@@ -861,9 +861,34 @@
 ; user=> (dea/run-nea (dea/+ dea/nea-3-as) "aaaaaa")
 ; [#{"s" "q_0" "q_3"} true]
 
-; @todo: single step?
+(defn count-transitions-ins-outs
+  [{:keys [transitions] :as nea}]
+  (reduce
+    (fn [txs [from c to]]
+      (-> txs
+          (update-in [to] (fnil
+                            (fn [[ins outs]]
+                              [(inc ins) outs])
+                            [0 0]))
+          (update-in [from] (fnil
+                              (fn [[ins outs]]
+                                [ins (inc outs)])
+                              [0 0]))))
+    {}
+    transitions))
+; (dea/count-transitions-ins-outs  dea/nea-baa)
+; {"q_2" [2 1], "q_1" [2 3], "q_0" [1 1]}
+
+(defn find-reducibles
+  [nea]
+  (map
+    first
+    (filter (fn [[_ [ins outs]]]
+            (= 1 ins outs))
+          (count-transitions-ins-outs nea))))
+
 (defn nea->vnea
-  [nea])
+  [{:keys [] :as nea} state])
 
 (defn nea->regex
   [nea])
