@@ -956,7 +956,7 @@
      <regex> = letter | any-char | group | alternative | star | plus | one-of
      letter = #'[a-zA-Z0-9]' | escape escape-letter
      any-char = <'.'>
-     <group> = <'('> regices <')'>
+     group = <'('> regices <')'>
      alternative = left <'|'> right
      left = regex-alt
      right = regex-alt
@@ -1017,6 +1017,7 @@
          [[:S & r]] (regex->nea r)
          [[:letter c]] (make-nea-for-char (first c))
          [[:any-char]] (throw (Exception. "any-char '.' not implemented"))
+         [[:group & r]] (regex->nea r) ; @todo: make it so that run-nea can tell what part of the input matched what group
          [[:star & r]] (star (regex->nea r))
          [[:plus & r]] (plus (regex->nea r))
          [[:one-of & ls]] (make-nea-for-chars (parse-one-of-args-list ls))
