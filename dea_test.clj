@@ -2,6 +2,9 @@
 ; (run-tests 'dea-test)
 (ns dea-test
   (:require [clojure.test :refer [are deftest is testing]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
             [dea]))
 
 (deftest run-dea-drehkreuz-test
@@ -127,3 +130,14 @@
 ; @todo: test nea-eq?
 
 ; @todo: test alternative, product, complement, chain, *, +
+
+(def regex-gen
+  (gen/let [letters-gen (gen/not-empty gen/string-alphanumeric)
+            alt-gen (gen/fmap (fn [[l r]] (str l "|" r)) (gen/tuple regex-gen regex-gen))
+            star-gen (gen/fmap #(str % "*") regex-gen)
+            plus-gen (gen/fmap #(str % "+") regex-gen)
+            one-of-letters-gen (gen/fmap #(str "[" % "]") (gen/one-of [gen/string-alphanumeric (gen/elements ["\\-" "\\."])]))
+            one-of-range-gen (gen/fmap (fn [[i l r o]] (str "[" i l "-" r " o]")) (gen/tuple one-of-letters-gen gen/char-alphanumeric gen/char-alphanumeric one-of-letters-gen))
+            group-gen (gen/fmap #(str "(" % ")") letters-gen)]
+    (gen/one-of letters-gen alt-gen star-gen plus-gen one-of-letters-gen one-of-range-gen group-gen)))
+
