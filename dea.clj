@@ -964,8 +964,12 @@
      star = regex <'*'>
      plus = regex <'+'>
      one-of = <'['> letters-or-ranges <']'>
+     <letters-or-ranges> = (range-letter | range) letters-or-ranges | (range-letter | range)
+     range = range-letter <'-'> range-letter
      <escape> = <'\\\\'>
      <escape-letter> = '(' | ')' | '[' | ']' | '+' | '*'
+     <escape-range> = '-'
+     range-letter = #'[a-zA-Z0-9]' | '(' | ')' | '[' | ']' | '+' | '*' | '-' | escape escape-range
     "))
 
 (defn char-range
@@ -976,10 +980,10 @@
   [ls]
   (reduce (fn [alphabet l]
             (match l
-                   [:letter c] (conj alphabet c)
-                   [:range [:letter s] [:letter e]] (set/union
-                                                      alphabet
-                                                      (apply char-range (map first [s e])))))
+                   [:range-letter c] (conj alphabet c)
+                   [:range [:range-letter s] [:range-letter e]] (set/union
+                                                                  alphabet
+                                                                  (apply char-range (map first [s e])))))
           #{}
           ls))
 
