@@ -388,6 +388,12 @@
      (recur states (str name "'"))
      name)))
 
+(defn name-unique-in-both
+  [states-other states-this name]
+  (if (contains? states-other name)
+    (unique-name (set/union states-other states-this) (str name "'"))
+    name))
+
 (defn rename-incoming
   [old-name new-name [from c to]]
   (if (= to old-name)
@@ -724,7 +730,8 @@
 (defn alternative
   [nea-1 nea-2]
   (let [states-1 (:states nea-1)
-        nea-2 (rename-nea (partial unique-name states-1) nea-2)
+        states-2 (:states nea-2)
+        nea-2 (rename-nea (partial name-unique-in-both states-1 states-2) nea-2)
         states-2 (:states nea-2)
         states' (apply hash-set (set/union states-1 states-2))
         start' (unique-name states')
@@ -754,7 +761,8 @@
 (defn chain
   [nea-1 nea-2]
   (let [states-1 (:states nea-1)
-        nea-2 (rename-nea (partial unique-name states-1) nea-2)
+        states-2 (:states nea-2)
+        nea-2 (rename-nea (partial name-unique-in-both states-1 states-2) nea-2)
         states-2 (:states nea-2)
         states' (apply hash-set (set/union states-1 states-2))
         start' (:start nea-1)
