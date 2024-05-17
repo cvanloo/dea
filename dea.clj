@@ -953,8 +953,9 @@
   (insta/parser
     "S = regices | Epsilon
      <regices> = regex regices | regex
-     <regex> = letter | group | alternative | star | plus | one-of
+     <regex> = letter | any-char | group | alternative | star | plus | one-of
      letter = #'[a-zA-Z0-9]' | escape escape-letter
+     any-char = <'.'>
      <group> = <'('> regices <')'>
      alternative = left <'|'> right
      left = regex-alt
@@ -967,9 +968,9 @@
      <letters-or-ranges> = (range-letter | range) letters-or-ranges | (range-letter | range)
      range = range-letter <'-'> range-letter
      <escape> = <'\\\\'>
-     <escape-letter> = '(' | ')' | '[' | ']' | '+' | '*'
-     <escape-range> = '-'
-     range-letter = #'[a-zA-Z0-9]' | '(' | ')' | '[' | ']' | '+' | '*' | '-' | escape escape-range
+     <escape-letter> = '(' | ')' | '[' | ']' | '+' | '*' | '.'
+     <escape-range> = '-' | '.'
+     range-letter = #'[a-zA-Z0-9]' | '(' | ')' | '[' | ']' | '+' | '*' | '-' | '.' | escape escape-range
     "))
 
 (defn char-range
@@ -981,9 +982,11 @@
   (reduce (fn [alphabet l]
             (match l
                    [:range-letter c] (conj alphabet c)
-                   [:range [:range-letter s] [:range-letter e]] (set/union
-                                                                  alphabet
-                                                                  (apply char-range (map first [s e])))))
+                   [:range
+                    [:range-letter s]
+                    [:range-letter e]] (set/union
+                                         alphabet
+                                         (apply char-range (map first [s e])))))
           #{}
           ls))
 
@@ -992,6 +995,7 @@
   (match [regex]
          [[:S & r]] (regex->nea r)
          [[:letter c]] (make-nea-for-char (first c))
+         [[:any-char]] (throw (Exception. "any-char '.' not implemented"))
          [[:star & r]] (star (regex->nea r))
          [[:plus & r]] (plus (regex->nea r))
          [[:one-of & ls]] (make-nea-for-chars (parse-one-of-args-list ls))
@@ -1001,6 +1005,11 @@
          [[r & rs]] (chain (regex->nea r) (regex->nea rs))
          [[]] (make-nea-empty-word)
          ))
+
+; @todo: any-char not implemented:
+; @todo: use ranges on state transitions and determine what transition to take
+;        based on if the current char falls between a range
+;        allows us to use entire unicode as our alphabet for regex
 
 ; (dea/regex->nea (dea/regex-bnf "a(b|c)d"))
 
