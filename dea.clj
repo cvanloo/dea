@@ -305,7 +305,7 @@
     (step
       (set/union
         #{start}
-        (map last (find-transitions 'epsilon start)))
+        (take-all-epsilons [start]))
       input)))
 
 ; (dea/run-nea dea/nea-with-epsilon "")
