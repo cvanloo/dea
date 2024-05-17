@@ -902,6 +902,14 @@
   [nea])
 
 
+(defn make-nea-empty-word
+  [& alphabet]
+  {:states #{"q_0"}
+   :alphabet (apply hash-set alphabet)
+   :transitions #{}
+   :start "q_0"
+   :accepts #{"q_0"}})
+
 (defn make-nea-for-char
   [c]
   {:states #{"q_0" "q_1"}
@@ -943,7 +951,7 @@
 
 (def regex-bnf
   (insta/parser
-    "S = regices
+    "S = regices | Epsilon
      <regices> = regex regices | regex
      <regex> = letters | group | alternative | star | plus | one-of
      <letters> = letter letters | letter
@@ -986,6 +994,7 @@
          [[:alternative [:left & l] [:right & r]]] (alternative (regex->nea l) (regex->nea r))
          [[r]] (regex->nea r)
          [[r & rs]] (chain (regex->nea r) (regex->nea rs))
+         [[]] (make-nea-empty-word)
          ))
 
 ; (dea/regex->nea (dea/regex-bnf "a(b|c)d"))
@@ -1049,6 +1058,15 @@
 ; [#{"s" "q_1" "q_0"} true]
 ; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "[0-9]+")) "0123a")
 ; [#{} false]
+
+; user=> (dea/run-nea (dea/chain (dea/make-nea-for-char \a) (dea/make-nea-empty-word)) "")
+; [#{"q_0"} false]
+; user=> (dea/run-nea (dea/chain (dea/make-nea-for-char \a) (dea/make-nea-empty-word)) "a")
+; [#{"q_0'" "q_1"} true]
+; user=> (dea/run-nea (dea/chain (dea/make-nea-empty-word) (dea/make-nea-for-char \a)) "")
+; [#{"q_0'" "q_0"} false]
+; user=> (dea/run-nea (dea/chain (dea/make-nea-empty-word) (dea/make-nea-for-char \a)) "a")
+; [#{"q_1"} true]
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
