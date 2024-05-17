@@ -954,7 +954,7 @@
     "S = regices | Epsilon
      <regices> = regex regices | regex
      <regex> = letter | group | alternative | star | plus | one-of
-     letter = #'[a-zA-Z0-9]'
+     letter = #'[a-zA-Z0-9]' | escape escape-letter
      <group> = <'('> regices <')'>
      alternative = left <'|'> right
      left = regex-alt
@@ -964,8 +964,8 @@
      star = regex <'*'>
      plus = regex <'+'>
      one-of = <'['> letters-or-ranges <']'>
-     <letters-or-ranges> = (letter | range) letters-or-ranges | (letter | range)
-     range = letter <'-'> letter
+     <escape> = <'\\\\'>
+     <escape-letter> = '(' | ')' | '[' | ']' | '+' | '*'
     "))
 
 (defn char-range
@@ -1000,6 +1000,17 @@
 
 ; (dea/regex->nea (dea/regex-bnf "a(b|c)d"))
 
+; user=> (pprint (dea/regex-bnf "a\\(b|c\\)d"))
+; [:S
+;  [:alternative
+;   [:left [:letter "a"] [:letter "("] [:letter "b"]]
+;   [:right [:letter "c"] [:letter ")"] [:letter "d"]]]]
+
+; user=> (pprint (dea/regex-bnf "a(b|c)d"))
+; [:S
+;  [:letter "a"]
+;  [:alternative [:left [:letter "b"]] [:right [:letter "c"]]]
+;  [:letter "d"]]
 
 ; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "")
 ; [#{"s" "q_0"} false]
