@@ -973,6 +973,27 @@
      range-letter = #'[a-zA-Z0-9]' | '(' | ')' | '[' | ']' | '+' | '*' | '-' | '.' | escape escape-range
     "))
 
+; @todo: remove ambiguous grammar
+; user=> (insta/parses dea/regex-bnf "ab|cd")
+; ([:S
+;   [:alternative
+;    [:left [:letter "a"] [:letter "b"]]
+;    [:right [:letter "c"] [:letter "d"]]]]
+;  [:S
+;   [:alternative
+;    [:left [:letter "a"] [:letter "b"]]
+;    [:right [:letter "c"]]]
+;   [:letter "d"]]
+;  [:S
+;   [:letter "a"]
+;   [:alternative
+;    [:left [:letter "b"]]
+;    [:right [:letter "c"] [:letter "d"]]]]
+;  [:S
+;   [:letter "a"]
+;   [:alternative [:left [:letter "b"]] [:right [:letter "c"]]]
+;   [:letter "d"]])
+
 (defn char-range
   [s e]
   (map char (range (int s) (inc (int e)))))
