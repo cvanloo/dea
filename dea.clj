@@ -953,19 +953,20 @@
   (insta/parser
     "S = regices | Epsilon
      <regices> = regex regices | regex
-     <regex> = letters | group | alternative | star | plus | one-of
-     <letters> = letter letters | letter
+     <regex> = letter | group | alternative | star | plus | one-of
      letter = #'[a-zA-Z0-9]'
      <group> = <'('> regices <')'>
      alternative = left <'|'> right
-     left = regex
-     right = regex
+     left = regex-alt
+     right = regex-alt
+     <regex-alt> = letters | group | alternative | star | plus | one-of
+    .<letters> = letter letters | letter
      star = regex <'*'>
      plus = regex <'+'>
      one-of = <'['> letters-or-ranges <']'>
      <letters-or-ranges> = (letter | range) letters-or-ranges | (letter | range)
      range = letter <'-'> letter
-     <ranges> = range ranges | range"))
+    "))
 
 (defn char-range
   [s e]
@@ -1067,6 +1068,20 @@
 ; [#{"q_0'" "q_0"} false]
 ; user=> (dea/run-nea (dea/chain (dea/make-nea-empty-word) (dea/make-nea-for-char \a)) "a")
 ; [#{"q_1"} true]
+
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "")
+; [#{"s" "s'" "q_0" "q_0'''" "q_0''''"} false]
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "ba")
+; [#{"q_1'"} true]
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "cd")
+; [#{"q_1''''" "q_0''''"} true]
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "123")
+; [#{"q_0''" "q_1'''"} true]
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "12")
+; [#{"q_0'''" "q_1''"} false]
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ba|cd|123")) "oeua")
+; [#{} false]
+
 
 
 ; (dea/-main "drehkreuz" "" "D" "DF" "DFFF" "DFFFD")
