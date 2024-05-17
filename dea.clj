@@ -976,8 +976,8 @@
 
 (defn regex->nea
   [regex]
-  ;(println regex)
   (match [regex]
+         [[:S & r]] (regex->nea r)
          [[:letter c]] (make-nea-for-char (first c))
          [[:star & r]] (star (regex->nea r))
          [[:plus & r]] (plus (regex->nea r))
@@ -988,66 +988,66 @@
          [[r & rs]] (chain (regex->nea r) (regex->nea rs))
          ))
 
-; (dea/regex->nea (vec (rest (dea/regex-bnf "a(b|c)d"))))
+; (dea/regex->nea (dea/regex-bnf "a(b|c)d"))
 
 
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "")
 ; [#{"s" "q_0"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "a")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "a")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aa")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "aa")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaa")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "aaa")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaa")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "aaaa")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a+")))) "aaaab")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a+")) "aaaab")
 ; [#{} false]
 
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "")
 ; [#{"s" "q_0'" "q_0"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "c")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "c")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "a")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "a")
 ; [#{"q_1"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "b")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "b")
 ; [#{"q_1'"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "ba")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "ba")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "a|b")))) "ab")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "a|b")) "ab")
 ; [#{} false]
 
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "")
 ; [#{"s" "q_0" "q_0''"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "b")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "b")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "ab")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "ab")
 ; [#{"q_1'"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "abc")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "abc")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "abcd")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "abcd")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "ab|cd")))) "cd")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "ab|cd")) "cd")
 ; [#{"q_1''" "q_0''"} true]
 
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "(ab)+")) "")
 ; [#{"s" "q_0"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "a")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "(ab)+")) "a")
 ; [#{"q_0'" "q_1"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "ab")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "(ab)+")) "ab")
 ; [#{"s" "q_1'" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "aba")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "(ab)+")) "aba")
 ; [#{"q_0'" "q_1"} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "(ab)+")))) "abab")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "(ab)+")) "abab")
 ; [#{"s" "q_1'" "q_0"} true]
 
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "cd")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "[0-9]+")) "cd")
 ; [#{} false]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "[0-9]+")) "0")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0123")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "[0-9]+")) "0123")
 ; [#{"s" "q_1" "q_0"} true]
-; user=> (dea/run-nea (dea/regex->nea (vec (rest (dea/regex-bnf "[0-9]+")))) "0123a")
+; user=> (dea/run-nea (dea/regex->nea (dea/regex-bnf "[0-9]+")) "0123a")
 ; [#{} false]
 
 
